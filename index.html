@@ -1,96 +1,166 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script defer src="/_vercel/insights/script.js"></script>
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css"
-    />
-    <title>Vercel HTML Starter</title>
-    <meta
-      name="description"
-      content="High-performance HTML based website template."
-    />
-  </head>
-  <body>
-    <h1>Vercel HTML Starter</h1>
-    <p>
-      This template is a simple, but powerful single
-      <code>index.html</code> file deployed to
-      <a href="https://vercel.com">Vercel</a>. When your site is deployed, all
-      static assets (like HTML, JavaScript, CSS, images, and more) are deployed
-      globally to every
-      <a href="https://vercel.com/docs/concepts/edge-network/overview"
-        >Vercel Edge Network</a
-      >
-      region.
-    </p>
-    <h2>Simple, privacy-friendly analytics</h2>
-    <p>
-      Want to understand your visitor traffic? Vercel Analytics gives you
-      first-party, privacy-friendly traffic analytics for your HTML site. This
-      template is already configured using the following script:
-    </p>
-    <pre><code>&lt;script defer src="/_vercel/insights/script.js"&gt;&lt;/script&gt;</code></pre>
-    <p>
-      Learn more about
-      <a href="https://vercel.com/analytics">Vercel Analytics</a>.
-    </p>
-    <h2>Integrated with git</h2>
-    <p>
-      Deploying updates to your site is as simple as
-      <code>git push</code> thanks to Vercel's advanced
-      <a href="https://vercel.com/docs/concepts/git">Git Integration</a>.
-      Support for GitHub, GitLab, Bitbucket is zero-configuration, and with the
-      flexible Vercel CLI and API, you can integrate with any tool possible.
-    </p>
-    <p>
-      Learn more about
-      <a href="https://vercel.com/docs/concepts/git">Git Integration</a>.
-    </p>
-    <h2>Fast <code>gzip</code> compression</h2>
-    <p>
-      To help ensure the smallest possible file sizes for your static assets,
-      the Vercel Edge Network compresses files by default using
-      <code>gzip</code>. You can also optionally use
-      <code>brotli</code> compressesion if you prefer.
-    </p>
-    <p>
-      Learn more about
-      <a href="https://vercel.com/docs/concepts/edge-network/compression"
-        >compression</a
-      >.
-    </p>
-    <h2>Advanced routing configuration</h2>
-    <p>
-      Vercel gives you a variety of ways to configure the routing of your
-      website. For example, adding redirects, rewrites, or headers to your page.
-      While you can use <code>vercel.json</code> to define these through JSON,
-      you can also express your routing configuration as code using
-      <a href="https://vercel.com/docs/concepts/functions/edge-middleware"
-        >Vercel Edge Middleware</a
-      >.
-    </p>
-    <p>
-      Middleware runs before the
-      <a href="https://vercel.com/docs/concepts/edge-network/caching"
-        >Vercel Edge Network Cache</a
-      >, so you can configure routing exactly as your application needs. For
-      example, this template uses <code>middleware.js</code> defined in the root
-      of the repository to add additional security headers to the site:
-    </p>
-    <pre><code>referrer-policy: origin-when-cross-origin
-strict-transport-security: max-age=31536000; includeSubDomains; preload
-x-content-type-options: nosniff
-x-dns-prefetch-control: on
-x-frame-options: DENY</code></pre>
-    <p>
-      Learn more about
-      <a href="https://vercel.com/docs/concepts/functions/edge-middleware"
-        >Vercel Edge Middleware</a
-      >.
-    </p>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vikreya - Smart Analytics for Indian E-commerce Sellers</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- PapaParse for CSV parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="logo">Vikreya</div>
+            <nav class="nav">
+                <a href="#services">Services</a>
+                <a href="#how-it-works">How It Works</a>
+                <a href="#pricing">Pricing</a>
+                <button class="btn-secondary">Sign In</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>Maximize Your E-commerce Reimbursements</h1>
+            <p class="hero-subtitle">Get detailed insights into reimbursement opportunities across Amazon, Flipkart and more. Simple reports, clear next steps, better account management.</p>
+            <button class="btn-primary" onclick="showApp()">Get Started Free</button>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section id="services" class="services">
+        <div class="container">
+            <h2>Our Services</h2>
+            <div class="service-grid">
+                <div class="service-card">
+                    <div class="service-icon">📊</div>
+                    <h3>Business Reports Analysis</h3>
+                    <p>Get insights on top products, sales trends, and inventory planning with FBA shipment recommendations</p>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">💰</div>
+                    <h3>Reimbursement Detection</h3>
+                    <p>Automatically identify missed reimbursements from lost, damaged, or misplaced inventory</p>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">🎯</div>
+                    <h3>Listing Optimization</h3>
+                    <p>Review your listings and get actionable recommendations to improve visibility and conversions</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Application (Hidden Initially) -->
+    <div id="app" class="app-container" style="display: none;">
+        <div class="container">
+            <!-- Progress Bar -->
+            <div class="progress-bar">
+                <div class="progress-step active" data-step="1">
+                    <div class="step-circle">1</div>
+                    <div class="step-label">Choose Service</div>
+                </div>
+                <div class="progress-line"></div>
+                <div class="progress-step" data-step="2">
+                    <div class="step-circle">2</div>
+                    <div class="step-label">Upload Reports</div>
+                </div>
+                <div class="progress-line"></div>
+                <div class="progress-step" data-step="3">
+                    <div class="step-circle">3</div>
+                    <div class="step-label">Get Insights</div>
+                </div>
+            </div>
+
+            <!-- Step 1: Choose Service -->
+            <div id="step1" class="step-content active">
+                <h2>Which service do you need today?</h2>
+                <div class="service-selection">
+                    <div class="service-option" onclick="selectService('business-reports')">
+                        <input type="radio" name="service" id="service1" value="business-reports">
+                        <label for="service1">
+                            <div class="service-icon">📊</div>
+                            <h3>Business Reports Analysis</h3>
+                            <p>Sales trends, inventory planning, and product performance</p>
+                        </label>
+                    </div>
+                    <div class="service-option" onclick="selectService('reimbursement')">
+                        <input type="radio" name="service" id="service2" value="reimbursement">
+                        <label for="service2">
+                            <div class="service-icon">💰</div>
+                            <h3>Reimbursement Detection</h3>
+                            <p>Identify eligible reimbursement cases and streamline your claim process</p>
+                        </label>
+                    </div>
+                    <div class="service-option" onclick="selectService('listing-review')">
+                        <input type="radio" name="service" id="service3" value="listing-review">
+                        <label for="service3">
+                            <div class="service-icon">🎯</div>
+                            <h3>Listing Optimization</h3>
+                            <p>Improve your product listings for better sales</p>
+                        </label>
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="nextStep(2)" id="continueBtn" disabled>Continue</button>
+            </div>
+
+            <!-- Step 2: Upload Reports -->
+            <div id="step2" class="step-content">
+                <h2>Upload Your Reports</h2>
+                <div id="upload-instructions"></div>
+                
+                <div class="upload-area" id="uploadArea">
+                    <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" multiple style="display: none;">
+                    <div class="upload-content" onclick="document.getElementById('fileInput').click()">
+                        <div class="upload-icon">📁</div>
+                        <h3>Drag and drop your files here</h3>
+                        <p>or click to browse</p>
+                        <p class="file-types">Accepted formats: CSV, Excel (.xlsx, .xls)</p>
+                    </div>
+                </div>
+
+                <div id="fileList" class="file-list"></div>
+
+                <div class="button-group">
+                    <button class="btn-secondary" onclick="prevStep(1)">Back</button>
+                    <button class="btn-primary" onclick="processFiles()" id="processBtn" disabled>Analyze Reports</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Results -->
+            <div id="step3" class="step-content">
+                <h2>Your Analysis Results</h2>
+                <div id="results-container">
+                    <div class="loading" id="loading">
+                        <div class="spinner"></div>
+                        <p>Analyzing your data...</p>
+                    </div>
+                    <div id="results" style="display: none;"></div>
+                </div>
+                <div class="button-group">
+                    <button class="btn-secondary" onclick="resetApp()">Start New Analysis</button>
+                    <button class="btn-primary" onclick="downloadReport()">Download Full Report</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 Vikreya. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="#privacy">Privacy Policy</a>
+                <a href="#terms">Terms of Service</a>
+                <a href="#contact">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
 </html>
