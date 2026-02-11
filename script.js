@@ -1,5 +1,9 @@
 // Vikreya - Reimbursement Detection Engine
 // State management
+function showApp() {
+    document.getElementById('landing').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+}
 let currentStep = 1;
 let selectedService = '';
 let uploadedFiles = [];
