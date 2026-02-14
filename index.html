@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vikreya — Free Amazon FBA Reimbursement Tool for Indian Sellers</title>
+    <meta name="description" content="Free tool to find missed FBA reimbursements for Amazon.in sellers. Upload reports, get claim templates in minutes. No signup needed.">
+    <meta name="keywords" content="Amazon FBA reimbursement India, Amazon seller tools India, FBA inventory reconciliation, Amazon India seller, PPC optimization Amazon India, dead keywords Amazon">
+    <meta property="og:title" content="Vikreya — Find Missed Amazon FBA Reimbursements (Free)">
+    <meta property="og:description" content="Upload your Amazon Seller Central reports. Get claim-ready insights in 3 minutes. Built for Indian sellers.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://vikreya.vercel.app">
+    <link rel="canonical" href="https://vikreya.vercel.app">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- GOOGLE ANALYTICS — Replace G-XXXXXXXXXX with your real Measurement ID -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-XXXXXXXXXX');
+    </script>
+</head>
+<body>
+
+<!-- ========== LANDING PAGE ========== -->
+<div id="landing">
+
+    <!-- Nav -->
+    <header class="header">
+        <nav class="nav">
+            <a href="#" class="logo">विक्रेय<span>Vikreya</span></a>
+            <div class="nav-right">
+                <a href="#what" class="nav-link">What we do</a>
+                <a href="#why" class="nav-link">Why it matters</a>
+                <button class="btn-nav" onclick="showApp()">Try it free →</button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero — dark bg, left-aligned, asymmetric -->
+    <section class="hero">
+        <div class="hero-grid">
+            <div class="hero-left">
+                <p class="hero-eyebrow">Free during beta · Built for Amazon.in sellers</p>
+                <h1>Your seller account<br>is leaking money.</h1>
+                <p class="hero-body">Between missed reimbursements, ad spend on dead keywords, and listings that don't convert — most Amazon India sellers lose ₹5,000–50,000 a year without realizing it. Vikreya finds the leaks in your existing reports.</p>
+                <div class="hero-actions">
+                    <button class="btn-hero-primary" onclick="showApp()">Start free analysis →</button>
+                    <a href="#what" class="btn-hero-ghost">See how it works</a>
+                </div>
+                <div class="hero-proof">
+                    <span>🔒 Data stays in your browser</span>
+                    <span>⚡ No signup needed</span>
+                </div>
+            </div>
+            <div class="hero-right">
+                <div class="hero-visual">
+                    <div class="hero-card hc1">
+                        <div class="hc-label">Reimbursement found</div>
+                        <div class="hc-amount">₹4,200</div>
+                        <div class="hc-detail">6 units · Lost in fulfillment</div>
+                    </div>
+                    <div class="hero-card hc2">
+                        <div class="hc-label">Fee overcharge detected</div>
+                        <div class="hc-amount">₹850</div>
+                        <div class="hc-detail">Wrong weight category</div>
+                    </div>
+                    <div class="hero-card hc3">
+                        <div class="hc-label">Dead keyword spend</div>
+                        <div class="hc-amount">₹2,100/mo</div>
+                        <div class="hc-detail">7 keywords · Zero conversions</div>
+                    </div>
+                    <div class="hero-total">
+                        <span>Total recoverable</span>
+                        <strong>₹18,450</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- What We Do — editorial layout -->
+    <section class="what" id="what">
+        <div class="container">
+            <div class="what-header">
+                <p class="label">What Vikreya does</p>
+                <h2>Four reports you already have.<br>Insights you didn't know were inside.</h2>
+            </div>
+            <div class="what-list">
+                <div class="what-item">
+                    <div class="what-number">01</div>
+                    <div class="what-content">
+                        <h3>Reimbursement detection</h3>
+                        <p>Amazon loses your inventory, charges wrong fees, and processes refunds without getting the return back. It happens more than you think. Upload your FBA Inventory Ledger and we surface every case — with the exact claim template you paste into Seller Support.</p>
+                    </div>
+                </div>
+                <div class="what-item">
+                    <div class="what-number">02</div>
+                    <div class="what-content">
+                        <h3>PPC growth & cleanup</h3>
+                        <p>Your Search Term Report has everything: which keywords make money, which burn it, and which ones your campaigns are fighting over. We break it all down — keywords to scale, keywords to kill, and the exact bid changes to make. No more guessing.</p>
+                        <span class="new-badge">New</span>
+                    </div>
+                </div>
+                <div class="what-item">
+                    <div class="what-number">03</div>
+                    <div class="what-content">
+                        <h3>Business reports analysis</h3>
+                        <p>Your Business Report tells you which products are actually profitable and which ones sit in FBA burning storage fees. We rank them, calculate restock quantities, and flag the ones you should consider cutting.</p>
+                    </div>
+                </div>
+                <div class="what-item">
+                    <div class="what-number">04</div>
+                    <div class="what-content">
+                        <h3>Listing health check</h3>
+                        <p>Short titles, missing bullet points, empty backend keywords — small things that quietly kill your rankings. We score each listing and give you specific rewrites, image shot lists, and SEO keyword suggestions you can paste straight into Seller Central.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why It Matters -->
+    <section class="why" id="why">
+        <div class="container">
+            <div class="why-grid">
+                <div class="why-left">
+                    <p class="label">Why this matters</p>
+                    <h2>You already have the data.<br>You just don't have time<br>to read it.</h2>
+                </div>
+                <div class="why-right">
+                    <p>Every month, Seller Central generates dozens of reports — inventory ledgers, search term data, business reports, listing exports. They're full of useful information. But they're also dense CSV files that nobody has time to go through line by line.</p>
+                    <p>So the reimbursement cases pile up. The dead keywords keep spending. The listing with 2 bullet points stays at 2 bullet points. Not because you don't care, but because there are a hundred other things to do.</p>
+                    <p>Vikreya reads those reports for you, finds the things that need attention, and tells you exactly what to do about them. Upload, review, act. That's it.</p>
+                    <button class="btn-dark" onclick="showApp()">Try it now — it's free →</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How it works — simple 3-step -->
+    <section class="steps">
+        <div class="container">
+            <div class="steps-header">
+                <p class="label">How it works</p>
+                <h2>Three minutes.<br>That's all it takes.</h2>
+            </div>
+            <div class="steps-grid">
+                <div class="step-block">
+                    <div class="step-n">1</div>
+                    <h3>Pick what to check</h3>
+                    <p>Reimbursements, PPC waste, inventory, or listing quality. Pick one and we'll tell you exactly which reports to download.</p>
+                </div>
+                <div class="step-block">
+                    <div class="step-n">2</div>
+                    <h3>Upload your reports</h3>
+                    <p>Download CSVs from Seller Central (we show you where) and drag them in. Your data never leaves your browser.</p>
+                </div>
+                <div class="step-block">
+                    <div class="step-n">3</div>
+                    <h3>Get clear next steps</h3>
+                    <p>See exactly what needs attention, how much money is at stake, and get copy-paste templates to take action today.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Email collection -->
+    <section class="email-section">
+        <div class="container">
+            <div class="email-box">
+                <h3>We're building fast. Stay in the loop.</h3>
+                <p>Flipkart support, Hindi version, GST reconciliation — big updates coming. Drop your email and we'll let you know.</p>
+                <div class="email-form" id="emailForm">
+                    <input type="email" id="emailInput" class="email-input" placeholder="your@email.com">
+                    <button class="btn-email" onclick="submitEmail()">Join waitlist</button>
+                </div>
+                <div id="emailSuccess" class="email-success" style="display:none;">✅ You're on the list.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-grid">
+            <div class="footer-left">
+                <a href="#" class="logo-footer">विक्रेय<span>Vikreya</span></a>
+                <p>Smart account management<br>for Indian e-commerce sellers.</p>
+            </div>
+            <div class="footer-right">
+                <a href="/cdn-cgi/l/email-protection#2a5c4341584f534b045e4545466a4d474b434604494547">Contact</a>
+                <a href="#privacy">Privacy</a>
+                <a href="#terms">Terms</a>
+            </div>
+        </div>
+        <div class="container">
+            <p class="footer-copy">&copy; 2026 Vikreya. All rights reserved.</p>
+        </div>
+    </footer>
+</div>
+
+<!-- ========== APP (WIZARD) ========== -->
+<div id="app" style="display:none;">
+
+    <header class="header header-app">
+        <nav class="nav">
+            <a href="#" class="logo" onclick="goHome(); return false;">विक्रेय<span>Vikreya</span></a>
+            <button class="btn-nav-ghost" onclick="goHome()">← Back to home</button>
+        </nav>
+    </header>
+
+    <!-- Progress -->
+    <div class="progress-bar">
+        <div class="progress-track">
+            <div class="progress-step active" id="prog1"><div class="progress-dot">1</div><span>Choose</span></div>
+            <div class="progress-line" id="line1"></div>
+            <div class="progress-step" id="prog2"><div class="progress-dot">2</div><span>Upload</span></div>
+            <div class="progress-line" id="line2"></div>
+            <div class="progress-step" id="prog3"><div class="progress-dot">3</div><span>Results</span></div>
+        </div>
+    </div>
+
+    <div class="wizard">
+
+        <!-- Step 1: Choose -->
+        <div id="step1" class="step active">
+            <h2>What do you want to check?</h2>
+            <p class="step-sub">Pick one. You can always come back for the others.</p>
+
+            <div class="choices">
+                <label class="choice" onclick="selectService('reimbursement')">
+                    <input type="radio" name="svc" value="reimbursement">
+                    <div class="choice-inner">
+                        <div class="choice-left">
+                            <strong>Reimbursement detection</strong>
+                            <span>Find money Amazon may owe you — lost inventory, wrong fees, unreturned refunds.</span>
+                        </div>
+                        <div class="choice-tag popular-tag">Popular</div>
+                        <div class="choice-check">✓</div>
+                    </div>
+                </label>
+                <label class="choice" onclick="selectService('ppc')">
+                    <input type="radio" name="svc" value="ppc">
+                    <div class="choice-inner">
+                        <div class="choice-left">
+                            <strong>PPC & keyword cleanup</strong>
+                            <span>Find dead keywords wasting your ad budget. Stop paying for clicks that never convert.</span>
+                        </div>
+                        <div class="choice-tag new-tag">New</div>
+                        <div class="choice-check">✓</div>
+                    </div>
+                </label>
+                <label class="choice" onclick="selectService('reports')">
+                    <input type="radio" name="svc" value="reports">
+                    <div class="choice-inner">
+                        <div class="choice-left">
+                            <strong>Business reports analysis</strong>
+                            <span>Sales trends, top products, and how much inventory to ship for weeks of coverage.</span>
+                        </div>
+                        <div class="choice-check">✓</div>
+                    </div>
+                </label>
+                <label class="choice" onclick="selectService('listing')">
+                    <input type="radio" name="svc" value="listing">
+                    <div class="choice-inner">
+                        <div class="choice-left">
+                            <strong>Listing health check</strong>
+                            <span>Score your titles, bullets, images, and keywords against what ranks on Amazon.in.</span>
+                        </div>
+                        <div class="choice-check">✓</div>
+                    </div>
+                </label>
+            </div>
+
+            <div class="wizard-actions">
+                <div></div>
+                <button class="btn-primary" id="continueBtn" onclick="goToStep(2)" disabled>Continue →</button>
+            </div>
+        </div>
+
+        <!-- Step 2: Upload -->
+        <div id="step2" class="step">
+            <h2>Upload your reports</h2>
+            <div id="uploadInstructions"></div>
+
+            <div class="upload-zone" id="uploadZone">
+                <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" multiple>
+                <div class="upload-inner">
+                    <div class="upload-icon">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    </div>
+                    <p class="upload-main">Drag and drop your CSV files here</p>
+                    <p class="upload-sub">or click to browse · Accepts .csv, .xlsx, .xls</p>
+                </div>
+            </div>
+            <div id="fileList" class="file-list"></div>
+
+            <div class="wizard-actions">
+                <button class="btn-ghost-action" onclick="goToStep(1)">← Back</button>
+                <button class="btn-primary" id="analyzeBtn" onclick="analyzeFiles()" disabled>Analyze →</button>
+            </div>
+        </div>
+
+        <!-- Step 3: Results -->
+        <div id="step3" class="step">
+            <div id="loadingState" style="display:none;">
+                <div class="loading-box">
+                    <div class="spinner"></div>
+                    <p>Analyzing your data…</p>
+                    <p class="loading-sub">Cross-referencing reports</p>
+                </div>
+            </div>
+            <div id="resultsState" style="display:none;"></div>
+
+            <!-- Feedback -->
+            <div id="feedbackWidget" style="display:none;">
+                <div class="feedback-card">
+                    <h3>How was this?</h3>
+                    <p class="feedback-sub">Your honest feedback shapes what we build next.</p>
+                    <div class="feedback-stars" id="feedbackStars">
+                        <button class="star-btn" onclick="setRating(1)">★</button>
+                        <button class="star-btn" onclick="setRating(2)">★</button>
+                        <button class="star-btn" onclick="setRating(3)">★</button>
+                        <button class="star-btn" onclick="setRating(4)">★</button>
+                        <button class="star-btn" onclick="setRating(5)">★</button>
+                    </div>
+                    <p class="rating-label" id="ratingLabel"></p>
+                    <div class="feedback-tags-wrap">
+                        <button class="ftag" onclick="toggleTag(this)">Results were useful</button>
+                        <button class="ftag" onclick="toggleTag(this)">Instructions unclear</button>
+                        <button class="ftag" onclick="toggleTag(this)">Hard to find reports</button>
+                        <button class="ftag" onclick="toggleTag(this)">Would use again</button>
+                        <button class="ftag" onclick="toggleTag(this)">Would pay for this</button>
+                        <button class="ftag" onclick="toggleTag(this)">Need Hindi version</button>
+                    </div>
+                    <textarea id="feedbackText" class="feedback-textarea" placeholder="What would make this 10x better? (Optional)" rows="3"></textarea>
+                    <input type="email" id="feedbackEmail" class="feedback-email-input" placeholder="Email — only if you want us to follow up (optional)">
+                    <button class="btn-primary" onclick="submitFeedback()" id="feedbackSubmitBtn" disabled>Send feedback →</button>
+                </div>
+            </div>
+
+            <div class="wizard-actions" id="resultsBtns" style="display:none;">
+                <button class="btn-ghost-action" onclick="resetApp()">← New analysis</button>
+                <button class="btn-primary" onclick="downloadReport()">Download report</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<scri
