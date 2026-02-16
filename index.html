@@ -146,27 +146,61 @@
             <div class="why-grid">
                 <div class="why-left">
                     <p class="label">Why this matters</p>
-                    <h2>₹30,000 in annual leaks<br>is the average we find.</h2>
-                    <p class="why-body">In a survey of 120 Amazon.in FBA sellers we analyzed in beta, <strong>94% had missed reimbursements</strong>. The median amount was ₹11,400. The worst case lost ₹1.2 lakh in a single year. Most sellers only check Seller Central when something obviously breaks — but Amazon's errors are silent. Units go missing. Returns are marked received but never reshelved. Fees get charged incorrectly. Ads keep running on keywords that haven't converted in months.</p>
-                    <p class="why-body">Your Seller Central reports have the proof, but reading them manually is painful. We built Vikreya to do it for you — because if Amazon owes you money, you shouldn't have to become a spreadsheet expert to claim it.</p>
+                    <h2>You already have the data.<br>You just don't have time<br>to read it.</h2>
                 </div>
                 <div class="why-right">
-                    <div class="why-stat">
-                        <div class="stat-big">94%</div>
-                        <p>of sellers had at least one missed reimbursement in their FBA Inventory Ledger</p>
-                    </div>
-                    <div class="why-stat">
-                        <div class="stat-big">₹11.4k</div>
-                        <p>median recoverable amount found per seller over 6 months of data</p>
-                    </div>
-                    <div class="why-stat">
-                        <div class="stat-big">3 min</div>
-                        <p>average time from upload to downloadable claim templates</p>
-                    </div>
+                    <p>Every month, Seller Central generates dozens of reports — inventory ledgers, search term data, business reports, listing exports. They're full of useful information. But they're also dense CSV files that nobody has time to go through line by line.</p>
+                    <p>So the reimbursement cases pile up. The dead keywords keep spending. The listing with 2 bullet points stays at 2 bullet points. Not because you don't care, but because there are a hundred other things to do.</p>
+                    <p>Vikreya reads those reports for you, finds the things that need attention, and tells you exactly what to do about them. Upload, review, act. That's it.</p>
+                    <button class="btn-dark" onclick="showApp()">Try it now — it's free →</button>
                 </div>
             </div>
         </div>
     </section>
+
+    <!-- How it works — simple 3-step -->
+    <section class="steps">
+        <div class="container">
+            <div class="steps-header">
+                <p class="label">How it works</p>
+                <h2>Three minutes.<br>That's all it takes.</h2>
+            </div>
+            <div class="steps-grid">
+                <div class="step-block">
+                    <div class="step-n">1</div>
+                    <h3>Pick what to check</h3>
+                    <p>Reimbursements, PPC waste, inventory, or listing quality. Pick one and we'll tell you exactly which reports to download.</p>
+                </div>
+                <div class="step-block">
+                    <div class="step-n">2</div>
+                    <h3>Upload your reports</h3>
+                    <p>Download CSVs from Seller Central (we show you where) and drag them in. Your data never leaves your browser.</p>
+                </div>
+                <div class="step-block">
+                    <div class="step-n">3</div>
+                    <h3>Get clear next steps</h3>
+                    <p>See exactly what needs attention, how much money is at stake, and get copy-paste templates to take action today.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Email collection -->
+    <section class="email-section">
+        <div class="container">
+            <div class="email-box">
+                <h3>We're building fast. Stay in the loop.</h3>
+                <p>Fee audit alerts, Flipkart support, Hindi version — big updates coming. Drop your email and we'll let you know.</p>
+                <form class="email-form" id="emailForm" action="https://formspree.io/f/YOUR_FORM_ID" method="POST" onsubmit="return submitEmail(event)">
+                    <input type="email" name="email" id="emailInput" class="email-input" placeholder="your@email.com" required>
+                    <input type="hidden" name="source" value="vikreya-waitlist">
+                    <button type="submit" class="btn-email">Join waitlist</button>
+                </form>
+                <div id="emailSuccess" class="email-success" style="display:none;">✅ You're on the list.</div>
+            </div>
+        </div>
+    </section>
+
 
     <!-- Footer -->
     <footer class="footer">
