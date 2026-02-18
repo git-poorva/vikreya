@@ -1392,3 +1392,210 @@ body {
     .demo-cards-cluster { display: none; }
     .demo-nav-links span:not(.demo-cta-btn) { display: none; }
 }
+
+/* ============================================
+   PRICING PAGE
+   ============================================ */
+
+.pricing-hero {
+    padding: 120px 0 60px;
+    background: var(--white);
+    text-align: center;
+}
+.pricing-hero h1 {
+    font-family: var(--serif);
+    font-size: 52px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+    margin: 12px 0 16px;
+}
+.pricing-desc {
+    font-size: 18px;
+    color: var(--text-mid);
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+.pricing-grid-section {
+    padding: 40px 0 80px;
+    background: var(--bg);
+}
+.pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    max-width: 1040px;
+    margin: 0 auto;
+}
+
+.pricing-card {
+    background: var(--white);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px 28px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.pricing-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 36px rgba(0,0,0,0.08);
+}
+
+.pricing-card-featured {
+    border-color: var(--green);
+    border-width: 3px;
+    transform: scale(1.04);
+}
+.pricing-card-featured:hover {
+    transform: scale(1.04) translateY(-4px);
+}
+
+.pricing-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--green);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 14px;
+    border-radius: 20px;
+    letter-spacing: 0.02em;
+}
+
+.pricing-card-header {
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 24px;
+    margin-bottom: 24px;
+}
+.pricing-card-header h3 {
+    font-family: var(--serif);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+}
+.pricing-price {
+    font-family: var(--serif);
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--green);
+    line-height: 1;
+    margin-bottom: 8px;
+}
+.pricing-price span {
+    font-family: var(--font);
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--text-mid);
+}
+.pricing-tagline {
+    font-size: 14px;
+    color: var(--text-mid);
+}
+
+.pricing-features {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 28px;
+    flex: 1;
+}
+.pricing-feature {
+    font-size: 15px;
+    color: var(--text);
+    line-height: 1.5;
+}
+.pricing-feature-disabled {
+    color: var(--text-light);
+    opacity: 0.5;
+}
+
+.pricing-cta {
+    display: block;
+    text-align: center;
+    padding: 14px 24px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: none;
+    width: 100%;
+    font-family: var(--font);
+}
+.pricing-cta-free {
+    background: var(--green-bg);
+    color: var(--green);
+    border: 2px solid var(--green);
+}
+.pricing-cta-free:hover {
+    background: var(--green);
+    color: #fff;
+}
+.pricing-cta-pro {
+    background: var(--green);
+    color: #fff;
+}
+.pricing-cta-pro:hover {
+    background: var(--sage);
+}
+.pricing-cta-business {
+    background: var(--dark);
+    color: #fff;
+}
+.pricing-cta-business:hover {
+    background: var(--charcoal);
+}
+
+.pricing-note {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-light);
+    margin-top: 12px;
+    font-style: italic;
+}
+
+.pricing-faq {
+    padding: 80px 0;
+    background: var(--white);
+}
+.pricing-faq h2 {
+    font-family: var(--serif);
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--text);
+    text-align: center;
+    margin-bottom: 48px;
+}
+.faq-pricing-grid {
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.pricing-cta-final {
+    padding: 80px 0;
+    background: var(--green-pale);
+}
+
+@media (max-width: 900px) {
+    .pricing-grid {
+        grid-template-columns: 1fr;
+        gap: 32px;
+    }
+    .pricing-card-featured {
+        transform: scale(1);
+    }
+    .pricing-card-featured:hover {
+        transform: translateY(-4px);
+    }
+    .pricing-hero h1 {
+        font-size: 36px;
+    }
+}
