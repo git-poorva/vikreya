@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing — Vikreya | Amazon Seller Tools for India</title>
+    <meta name="description" content="Start free. Upgrade when you're ready. Vikreya helps Amazon.in sellers find missed reimbursements, optimize PPC, and fix inventory issues.">
+    <link rel="canonical" href="https://vikreya.vercel.app/pricing.html">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="header header-app">
+    <nav class="nav">
+        <a href="index.html" class="logo">विक्रेय<span>Vikreya</span></a>
+        <div class="nav-right">
+            <a href="index.html#what" class="nav-link">What we do</a>
+            <a href="pricing.html" class="nav-link">Pricing</a>
+            <a href="blog.html" class="nav-link">Resources</a>
+            <a href="index.html" class="btn-nav">Try it free →</a>
+        </div>
+    </nav>
+</header>
+
+<section class="pricing-hero">
+    <div class="container">
+        <p class="label">Pricing</p>
+        <h1>Start free.<br>Upgrade when you're ready.</h1>
+        <p class="pricing-desc">Every plan includes unlimited analyses during beta. Pay only when we add features that save you serious time.</p>
+    </div>
+</section>
+
+<section class="pricing-grid-section">
+    <div class="container">
+        <div class="pricing-grid">
+            
+            <!-- Free Plan -->
+            <div class="pricing-card pricing-card-free">
+                <div class="pricing-card-header">
+                    <h3>Free</h3>
+                    <div class="pricing-price">₹0<span>/forever</span></div>
+                    <p class="pricing-tagline">Perfect for getting started</p>
+                </div>
+                <div class="pricing-features">
+                    <div class="pricing-feature">✓ Unlimited analyses</div>
+                    <div class="pricing-feature">✓ FBA reimbursement detection</div>
+                    <div class="pricing-feature">✓ PPC keyword cleanup</div>
+                    <div class="pricing-feature">✓ Inventory health check</div>
+                    <div class="pricing-feature">✓ Listing optimization</div>
+                    <div class="pricing-feature">✓ Manual report upload</div>
+                    <div class="pricing-feature pricing-feature-disabled">× Automated monitoring</div>
+                    <div class="pricing-feature pricing-feature-disabled">× Email alerts</div>
+                    <div class="pricing-feature pricing-feature-disabled">× Claim filing assistance</div>
+                </div>
+                <a href="index.html" class="pricing-cta pricing-cta-free">Start analyzing free →</a>
+            </div>
+
+            <!-- Pro Plan -->
+            <div class="pricing-card pricing-card-pro pricing-card-featured">
+                <div class="pricing-badge">Most popular</div>
+                <div class="pricing-card-header">
+                    <h3>Pro</h3>
+                    <div class="pricing-price">₹999<span>/month</span></div>
+                    <p class="pricing-tagline">For sellers doing ₹5L+ monthly revenue</p>
+                </div>
+                <div class="pricing-features">
+                    <div class="pricing-feature">✓ Everything in Free</div>
+                    <div class="pricing-feature"><strong>✓ Monthly automated scans</strong></div>
+                    <div class="pricing-feature"><strong>✓ Email alerts for new cases</strong></div>
+                    <div class="pricing-feature"><strong>✓ Claim filing templates</strong></div>
+                    <div class="pricing-feature"><strong>✓ Priority support</strong></div>
+                    <div class="pricing-feature"><strong>✓ Historical trend analysis</strong></div>
+                    <div class="pricing-feature"><strong>✓ PPC bid recommendations</strong></div>
+                    <div class="pricing-feature pricing-feature-disabled">× White-glove claim filing</div>
+                    <div class="pricing-feature pricing-feature-disabled">× Dedicated account manager</div>
+                </div>
+                <button class="pricing-cta pricing-cta-pro" onclick="joinWaitlist('pro')">Join waitlist →</button>
+                <p class="pricing-note">Launching March 2026</p>
+            </div>
+
+            <!-- Business Plan -->
+            <div class="pricing-card pricing-card-business">
+                <div class="pricing-card-header">
+                    <h3>Business</h3>
+                    <div class="pricing-price">₹4,999<span>/month</span></div>
+                    <p class="pricing-tagline">For agencies & multi-brand sellers</p>
+                </div>
+                <div class="pricing-features">
+                    <div class="pricing-feature">✓ Everything in Pro</div>
+                    <div class="pricing-feature"><strong>✓ Up to 10 seller accounts</strong></div>
+                    <div class="pricing-feature"><strong>✓ We file claims for you</strong></div>
+                    <div class="pricing-feature"><strong>✓ Dedicated account manager</strong></div>
+                    <div class="pricing-feature"><strong>✓ Custom reporting</strong></div>
+                    <div class="pricing-feature"><strong>✓ API access</strong></div>
+                    <div class="pricing-feature"><strong>✓ Team collaboration tools</strong></div>
+                    <div class="pricing-feature"><strong>✓ Phone + WhatsApp support</strong></div>
+                </div>
+                <button class="pricing-cta pricing-cta-business" onclick="joinWaitlist('business')">Join waitlist →</button>
+                <p class="pricing-note">Launching April 2026</p>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<section class="pricing-faq">
+    <div class="container">
+        <h2>Common questions</h2>
+        <div class="faq-pricing-grid">
+            <div class="faq-item" onclick="toggleFaq(this)">
+                <div class="faq-q">When will paid plans launch? <span class="faq-icon">+</span></div>
+                <div class="faq-a">Pro launches in March 2026, Business in April 2026. Join the waitlist to get early access pricing (20% off for the first 100 sellers).</div>
+            </div>
+            <div class="faq-item" onclick="toggleFaq(this)">
+                <div class="faq-q">Will the Free plan stay free forever? <span class="faq-icon">+</span></div>
+                <div class="faq-a">Yes. The core analysis features (upload reports, get insights) will always have a free tier. Paid plans add automation, monitoring, and done-for-you services.</div>
+            </div>
+            <div class="faq-item" onclick="toggleFaq(this)">
+                <div class="faq-q">Can I cancel anytime? <span class="faq-icon">+</span></div>
+                <div class="faq-a">Absolutely. No contracts, no cancellation fees. Downgrade to Free or cancel completely whenever you want.</div>
+            </div>
+            <div class="faq-item" onclick="toggleFaq(this)">
+                <div class="faq-q">Do you offer annual pricing? <span class="faq-icon">+</span></div>
+                <div class="faq-a">Yes. Pay annually and get 2 months free (₹9,990/year for Pro, ₹49,990/year for Business).</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="pricing-cta-final">
+    <div class="container">
+        <div class="cta-box">
+            <h2>Start finding your leaks today</h2>
+            <p>The Free plan gives you everything you need to recover thousands in missed reimbursements. No credit card required.</p>
+            <a href="index.html" class="btn-hero-primary">Start free analysis →</a>
+        </div>
+    </div>
+</section>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-grid">
+            <div class="footer-col">
+                <a href="index.html" class="logo-footer">विक्रेय<span>Vikreya</span></a>
+                <p class="footer-tagline">Find the leaks. Claim what's yours.<br>Built for Amazon.in sellers.</p>
+            </div>
+            <div class="footer-col">
+                <div class="footer-title">Product</div>
+                <a href="index.html#what">What we do</a>
+                <a href="pricing.html">Pricing</a>
+                <a href="index.html">Try it free</a>
+            </div>
+            <div class="footer-col">
+                <div class="footer-title">Resources</div>
+                <a href="blog.html">Blog</a>
+                <a href="blog.html#guides">Seller guides</a>
+                <a href="/cdn-cgi/l/email-protection#a1c9c4cdcdcee1d7c8cad3c4d8c08fc0d1d1">Contact us</a>
+            </div>
+        </div>
+        <div class="footer-bottom"><p>© 2026 Vikreya. Made in India for Indian sellers.</p></div>
+    </div>
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+function toggleFaq(el) {
+    const isOpen = el.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+    if (!isOpen) el.classList.add('open');
+}
+
+function joinWaitlist(plan) {
+    const email = prompt('Enter your email to join the ' + plan.toUpperCase() + ' plan waitlist:');
+    if (email && email.includes('@')) {
+        alert('Thanks! We\'ll email you when ' + plan.toUpperCase() + ' launches wit
