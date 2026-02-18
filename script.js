@@ -76,8 +76,8 @@ function resetApp() {
 
     if (contBtn) contBtn.disabled = true;
     if (analyzeBtn) analyzeBtn.disabled = true;
-    if (fileList) fileList.innerHTML = '';
-    if (resultsState) resultsState.innerHTML = '';
+    if (fileList) fileList.innerHTML = DOMPurify.sanitize('');
+    if (resultsState) resultsState.innerHTML = DOMPurify.sanitize('');
     if (resultsBtns) resultsBtns.style.display = 'none';
     if (loadingState) loadingState.style.display = 'none';
 
@@ -161,7 +161,7 @@ function buildUploadInstructions() {
         html += '</div>';
     }
     html += '</div>';
-    box.innerHTML = html;
+    box.innerHTML = DOMPurify.sanitize(html);
 }
 
 // ---- FILE UPLOAD ----
@@ -193,10 +193,31 @@ function setupUpload() {
 }
 
 function handleFiles(fileList) {
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit
+    const allowedTypes = ['text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+    const allowedExtensions = ['csv', 'xls', 'xlsx'];
+    
     for (const file of fileList) {
+        // Check file size first
+        if (file.size > MAX_FILE_SIZE) {
+            alert(`File "${file.name}" is too large. Maximum size is 10MB.`);
+            continue; // Skip this file
+        }
+        
+        // Check file type
         const ext = file.name.split('.').pop().toLowerCase();
+        if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(ext)) {
+            alert(`"${file.name}" is not a valid file type. Please upload CSV or Excel files only.`);
+            continue; // Skip this file
+        }
+        
+        // Check extension (existing check)
         if (!['csv', 'xlsx', 'xls'].includes(ext)) continue;
+        
+        // Check for duplicates
         if (uploadedFiles.some(f => f.name === file.name)) continue;
+        
+        // All checks passed - add the file
         uploadedFiles.push(file);
         parseFile(file);
     }
@@ -217,13 +238,13 @@ function removeFile(index) {
 function renderFileList() {
     const list = document.getElementById('fileList');
     if (!list) return;
-    if (uploadedFiles.length === 0) { list.innerHTML = ''; return; }
-    list.innerHTML = uploadedFiles.map((f, i) => `
+    if (uploadedFiles.length === 0) { list.innerHTML = DOMPurify.sanitize(''); return; }
+    list.innerHTML = DOMPurify.sanitize(uploadedFiles.map((f, i) => `
         <div class="file-item">
             <div class="file-item-left">📄 <span>${f.name}</span></div>
             <button class="file-remove" onclick="removeFile(${i})">✕</button>
         </div>
-    `).join('');
+    `).join(''));
 }
 
 // ---- CSV PARSING ----
@@ -314,7 +335,7 @@ function analyzeFiles() {
             else if (selectedService === 'reports') results = analyzeBusinessReports();
             else results = analyzeListings();
 
-            resultsDiv.innerHTML = alertHtml + results;
+            resultsDiv.innerHTML = DOMPurify.sanitize(alertHtml + results);
             resultsDiv.style.display = 'block';
             resultsBtns.style.display = 'flex';
             const fw = document.getElementById('feedbackWidget');
@@ -339,7 +360,7 @@ function analyzeFiles() {
         else results = analyzeListings();
 
         document.getElementById('loadingState').style.display = 'none';
-        document.getElementById('resultsState').innerHTML = results;
+        document.getElementById('resultsState').innerHTML = DOMPurify.sanitize(results);
         document.getElementById('resultsState').style.display = 'block';
         document.getElementById('resultsBtns').style.display = 'flex';
         if (fw) fw.style.display = 'block';
@@ -3219,7 +3240,7 @@ function submitFeedback() {
     localStorage.setItem('vikreya_feedback', JSON.stringify(all));
 
     const card = document.querySelector('.feedback-card');
-    if (card) card.innerHTML = `<div class="feedback-done"><h3>Thank you!</h3><p>Your feedback shapes what we build next.</p></div>`;
+    if (card) card.innerHTML = DOMPurify.sanitize(`<div class="feedback-done"><h3>Thank you!</h3><p>Your feedback shapes what we build next.</p></div>`);
     showToast('Feedback saved!');
 }
 
