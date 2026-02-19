@@ -190,10 +190,111 @@ body {
     border-radius: 99px; margin-top: 10px; letter-spacing: 0.04em; text-transform: uppercase;
 }
 
-/* ---- WHY IT MATTERS ---- */
-.why { padding: 100px 0; background: var(--green-pale); }
-.why-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; }
-.why-right p { font-size: 16px; color: var(--text-mid); line-height: 1.75; margin-bottom: 20px; }
+/* ---- WHY IT MATTERS — Redesigned ---- */
+.why {
+    background: var(--dark);
+    padding: 0;
+    overflow: hidden;
+}
+.why-inner {
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: 96px 28px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 64px;
+}
+.why-eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--sage);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+}
+.why-h2 {
+    font-family: var(--serif);
+    font-size: clamp(34px, 4.5vw, 54px);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: #fff;
+    margin-bottom: 24px;
+}
+.why-h2 em {
+    font-style: italic;
+    color: var(--sage);
+}
+.why-lede {
+    font-size: 17px;
+    line-height: 1.75;
+    color: rgba(255,255,255,0.55);
+    max-width: 640px;
+}
+.why-stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.08);
+}
+.why-stat-card {
+    padding: 44px 36px;
+    background: rgba(255,255,255,0.03);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: background 0.25s;
+}
+.why-stat-card:hover { background: rgba(255,255,255,0.07); }
+.why-stat-card--accent {
+    background: var(--sage);
+    position: relative;
+}
+.why-stat-card--accent:hover { background: var(--green); }
+.why-stat-card--accent .wsc-label { color: rgba(26,26,46,0.7); }
+.wsc-number {
+    font-family: var(--serif);
+    font-size: clamp(48px, 6vw, 76px);
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+    letter-spacing: -0.03em;
+}
+.why-stat-card--accent .wsc-number { color: var(--dark); }
+.wsc-unit {
+    font-family: var(--font);
+    font-size: 0.38em;
+    font-weight: 600;
+    vertical-align: super;
+    margin-left: 2px;
+    letter-spacing: 0;
+}
+.wsc-label {
+    font-size: 14px;
+    line-height: 1.6;
+    color: rgba(255,255,255,0.45);
+    max-width: 220px;
+}
+.why-cta-row {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+.why-closer {
+    font-size: 17px;
+    color: rgba(255,255,255,0.45);
+    font-style: italic;
+    max-width: 380px;
+    line-height: 1.6;
+}
+/* Old stat-big for any lingering references */
+.stat-big { font-family: var(--serif); font-size: 48px; font-weight: 700; color: var(--green); }
+.why-body { font-size: 16px; color: var(--text-mid); line-height: 1.75; margin-bottom: 20px; }
+
 .btn-dark {
     font-family: var(--font); font-size: 15px; font-weight: 600;
     color: #fff; background: var(--dark); border: none;
@@ -201,6 +302,16 @@ body {
     transition: background 0.2s, transform 0.1s; margin-top: 12px;
 }
 .btn-dark:hover { background: var(--charcoal); transform: translateY(-1px); }
+
+@media (max-width: 900px) {
+    .why-stats-row { grid-template-columns: 1fr; gap: 1px; }
+    .why-stat-card { padding: 32px 28px; }
+    .why-cta-row { flex-direction: column; align-items: flex-start; gap: 24px; }
+    .why-inner { gap: 48px; padding: 72px 24px 64px; }
+}
+@media (max-width: 640px) {
+    .wsc-number { font-size: 56px; }
+}
 
 /* ---- STEPS ---- */
 .steps { padding: 100px 0; }
@@ -481,7 +592,6 @@ body {
     .hero-right { display: none; }
     .hero { padding: 120px 24px 72px; }
     .hero h1 { font-size: 36px; }
-    .why-grid { grid-template-columns: 1fr; gap: 32px; }
     .steps-grid { grid-template-columns: 1fr; gap: 16px; }
 }
 @media (max-width: 640px) {

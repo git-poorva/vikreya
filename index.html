@@ -16,9 +16,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
     
     <!-- External Libraries -->
-    <script src="papaparse.min.js"></script>
-<script src="xlsx.min.js"></script>
-<script src="jspdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="purify.min.js"></script>
     
     <link rel="stylesheet" href="styles.css">
 
@@ -30,7 +31,6 @@
         gtag('js', new Date());
         gtag('config', 'G-XXXXXXXXXX');
     </script>
-     <script src="purify.min.js"></script>
 </head>
 <body>
 
@@ -328,7 +328,7 @@
                 <div class="faq-left">
                     <p class="label">Questions</p>
                     <h2>Everything you<br>might want to know</h2>
-                    <p class="faq-sub">Can't find your answer? <a href="mailto:hello@vikreya.app">Email us</a> — we respond within 24 hours.</p>
+                    <p class="faq-sub">Can't find your answer? <a href="/cdn-cgi/l/email-protection#0169646d6d6e4177686a736478602f607171">Email us</a> — we respond within 24 hours.</p>
                 </div>
                 <div class="faq-right">
                     <div class="faq-item" onclick="toggleFaq(this)">
@@ -405,30 +405,33 @@
         </div>
     </section>
 
-    <!-- Why It Matters -->
+    <!-- Why It Matters — Redesigned -->
     <section class="why" id="why">
-        <div class="container">
-            <div class="why-grid">
-                <div class="why-left">
-                    <p class="label">Why this matters</p>
-                    <h2>₹30,000 in annual leaks<br>is the average we find.</h2>
-                    <p class="why-body">In a survey of 120 Amazon.in FBA sellers we analyzed in beta, <strong>94% had missed reimbursements</strong>. The median amount was ₹11,400. The worst case lost ₹1.2 lakh in a single year. Most sellers only check Seller Central when something obviously breaks — but Amazon's errors are silent. Units go missing. Returns are marked received but never reshelved. Fees get charged incorrectly. Ads keep running on keywords that haven't converted in months.</p>
-                    <p class="why-body">Your Seller Central reports have the proof, but reading them manually is painful. We built Vikreya to do it for you — because if Amazon owes you money, you shouldn't have to become a spreadsheet expert to claim it.</p>
+        <div class="why-inner">
+            <div class="why-headline-block">
+                <p class="why-eyebrow">Why this matters</p>
+                <h2 class="why-h2">Amazon's errors are<br><em>silent and expensive.</em></h2>
+                <p class="why-lede">In a beta analysis of 120 Amazon.in FBA sellers, most had no idea money was missing. Units lost in warehouses. Returns never restocked. Fees charged for the wrong product size. Ads running for months on keywords with zero conversions.</p>
+            </div>
+
+            <div class="why-stats-row">
+                <div class="why-stat-card">
+                    <div class="wsc-number">94<span class="wsc-unit">%</span></div>
+                    <div class="wsc-label">of sellers had at least one missed reimbursement sitting unclaimed in their FBA Inventory Ledger</div>
                 </div>
-                <div class="why-right">
-                    <div class="why-stat">
-                        <div class="stat-big">94%</div>
-                        <p>of sellers had at least one missed reimbursement in their FBA Inventory Ledger</p>
-                    </div>
-                    <div class="why-stat">
-                        <div class="stat-big">₹11.4k</div>
-                        <p>median recoverable amount found per seller over 6 months of data</p>
-                    </div>
-                    <div class="why-stat">
-                        <div class="stat-big">3 min</div>
-                        <p>average time from upload to downloadable claim templates</p>
-                    </div>
+                <div class="why-stat-card why-stat-card--accent">
+                    <div class="wsc-number">₹11.4<span class="wsc-unit">k</span></div>
+                    <div class="wsc-label">median amount recoverable per seller across 6 months of data — the worst case: ₹1.2 lakh</div>
                 </div>
+                <div class="why-stat-card">
+                    <div class="wsc-number">3<span class="wsc-unit">min</span></div>
+                    <div class="wsc-label">from uploading your report to having downloadable, Amazon-ready claim templates in your hands</div>
+                </div>
+            </div>
+
+            <div class="why-cta-row">
+                <p class="why-closer">Your Seller Central reports have the proof. We just read them for you.</p>
+                <button class="btn-hero-primary" onclick="showApp()">Find my leaks — it's free →</button>
             </div>
         </div>
     </section>
@@ -660,7 +663,7 @@
     </div>
 </div>
 
-<script data-cfasync="false" src="script.js"></script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="script.js"></script>
 
 <script>
 // --- FAQ TOGGLE ---
@@ -743,14 +746,4 @@ function showFrame(num) {
                 target.classList.add('active');
                 target.style.opacity = '1';
             });
-        });
-    }
-}
-
-// Show first frame on load
-document.addEventListener('DOMContentLoaded', () => {
-    showFrame(1);
-});
-</script>
-</body>
-</html>
+   
