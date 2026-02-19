@@ -345,6 +345,64 @@ function analyzeFiles() {
         return;
     }
 
+    // ---- REIMBURSEMENT: Enforce both Ledger + Settlement ----
+    if (selectedService === 'reimbursement') {
+        const types = Object.values(parsedData).map(d => d.type);
+        const hasLedger = types.includes('ledger');
+        const hasSettlement = types.includes('settlement');
+        const hasReturns = types.includes('returns');
+
+        // Need at least ledger OR returns to detect cases
+        if (!hasLedger && !hasReturns) {
+            const resultsDiv = document.getElementById('resultsState');
+            const loadingDiv = document.getElementById('loadingState');
+            if (loadingDiv) loadingDiv.style.display = 'none';
+
+            const missingHtml = `<div style="background:#fffbeb;border:2px solid #d97706;border-radius:12px;padding:28px;margin-bottom:24px;">
+                <div style="display:flex;align-items:start;gap:14px;">
+                    <span style="font-size:32px;line-height:1;">📋</span>
+                    <div>
+                        <h3 style="color:#92400e;margin:0 0 10px 0;font-size:18px;">Missing required report</h3>
+                        <p style="margin:0 0 12px 0;color:#78350f;font-size:15px;">Reimbursement analysis requires your <strong>FBA Inventory Ledger</strong> to detect lost or damaged units. This is the most important report.</p>
+                        <div style="background:#fff;border-radius:8px;padding:16px;border:1px solid #fde68a;margin-bottom:14px;">
+                            <p style="margin:0 0 8px 0;font-size:14px;font-weight:700;color:#78350f;">How to download your FBA Inventory Ledger:</p>
+                            <ol style="margin:0;padding-left:20px;font-size:14px;color:#92400e;line-height:1.8;">
+                                <li>Go to <strong>sellercentral.amazon.in</strong></li>
+                                <li>Reports → Fulfillment → Inventory → <strong>Inventory Ledger</strong></li>
+                                <li>Set date range: <strong>last 90–180 days</strong></li>
+                                <li>Click <strong>Request download</strong> → Download CSV</li>
+                            </ol>
+                        </div>
+                        <div style="background:#fff;border-radius:8px;padding:16px;border:1px solid #fde68a;">
+                            <p style="margin:0 0 8px 0;font-size:14px;font-weight:700;color:#78350f;">For best results, also upload (optional but reduces false positives):</p>
+                            <p style="margin:0;font-size:14px;color:#92400e;line-height:1.7;">
+                                📄 <strong>Settlement Report</strong> (Reports → Payments → All Statements) — lets us cross-check reimbursements Amazon already paid<br>
+                                📄 <strong>FBA Customer Returns</strong> (Reports → Fulfillment → Returns) — finds unreturned refunds
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+
+            resultsDiv.innerHTML = DOMPurify.sanitize(missingHtml);
+            resultsDiv.style.display = 'block';
+            document.getElementById('resultsBtns').style.display = 'none';
+            return;
+        }
+
+        // Have ledger but no settlement — warn (don't block, but flag risk)
+        if (hasLedger && !hasSettlement) {
+            // Store warning to inject into results later
+            window._reimbWarning = `<div style="background:#fffbeb;border:1px solid #d97706;border-radius:10px;padding:16px;margin-bottom:20px;">
+                <p style="margin:0;font-size:14px;color:#92400e;">
+                    <strong>⚠️ For higher accuracy:</strong> Upload your <strong>Settlement Report</strong> alongside the Inventory Ledger. Without it, we can't verify which cases Amazon has already reimbursed — some results below may already be resolved. Go to Reports → Payments → All Statements → Download.
+                </p>
+            </div>`;
+        } else {
+            window._reimbWarning = null;
+        }
+    }
+
     document.getElementById('loadingState').style.display = 'block';
     document.getElementById('resultsState').style.display = 'none';
     document.getElementById('resultsBtns').style.display = 'none';
@@ -399,6 +457,17 @@ function analyzeReimbursements() {
 
     const totalAmount = cases.reduce((sum, c) => sum + c.amount, 0);
 
+    // Save results to localStorage for claim tracking
+    const savedSession = {
+        service: 'reimbursement',
+        timestamp: new Date().toISOString(),
+        totalAmount,
+        caseCount: cases.length,
+        files: uploadedFiles.map(f => f.name),
+        cases: cases.map((c, i) => ({ id: 'case_' + i, type: c.type, amount: c.amount, status: 'pending', description: c.description }))
+    };
+    saveSession(savedSession);
+
     let html = `
         <div class="results-header">
             <h2>Analysis complete</h2>
@@ -408,6 +477,13 @@ function analyzeReimbursements() {
             ${!hasRealData ? '<p style="font-size:13px; color:var(--gold); margin-top:12px;">Showing sample results — upload real Amazon reports for your actual data</p>' : ''}
         </div>
     `;
+
+    // Inject missing-settlement warning if applicable
+    if (window._reimbWarning) html += window._reimbWarning;
+
+    // Claim tracker panel
+    html += buildClaimTracker(savedSession.cases);
+
     cases.forEach((c, i) => { html += buildCaseCard(c, i + 1); });
     return html;
 }
@@ -416,41 +492,116 @@ function detectRealCases() {
     const cases = [];
     const ledgerData = Object.values(parsedData).find(d => d.type === 'ledger');
     const returnData = Object.values(parsedData).find(d => d.type === 'returns');
+    const settlementData = Object.values(parsedData).find(d => d.type === 'settlement');
+
+    // Build a set of FNSKUs/ASINs that already have reimbursements in Settlement
+    // to eliminate false positives
+    const alreadyReimbursed = new Set();
+    if (settlementData && settlementData.rows) {
+        settlementData.rows.forEach(row => {
+            const type = (row['amount-description'] || row['transaction-type'] || '').toLowerCase();
+            if (type.includes('reimburs') || type.includes('fba_reimbursement')) {
+                const fnsku = row['fnsku'] || row['FNSKU'] || '';
+                const asin = row['asin'] || row['ASIN'] || '';
+                if (fnsku) alreadyReimbursed.add(fnsku.trim());
+                if (asin) alreadyReimbursed.add(asin.trim());
+            }
+        });
+    }
 
     if (ledgerData && ledgerData.rows.length > 0) {
+        // Group by FNSKU to avoid duplicate cases for same item
+        const fnSkuGroups = {};
         ledgerData.rows.forEach(row => {
-            const event = (row['event-type'] || row['Event Type'] || '').toLowerCase();
-            if (event.includes('lost') || event.includes('damaged') || event.includes('misplaced')) {
-                const qty = Math.abs(parseInt(row['quantity'] || row['Quantity'] || 1));
-                const fnsku = row['fnsku'] || row['FNSKU'] || 'N/A';
-                cases.push({
-                    type: 'Inventory Reconciliation Needed',
-                    priority: 'high', amount: qty * 700,
-                    description: `${qty} unit(s) of ${fnsku} flagged as "${event}" in fulfillment center inventory ledger.`,
-                    proof: `Event: ${event}, FNSKU: ${fnsku}, Quantity: ${qty}`,
-                    steps: ['Go to Seller Central → Help → Contact Us', 'Select "Fulfillment by Amazon" → "FBA Inventory"', 'Provide the FNSKU and event details', 'Request a review of the inventory discrepancy', 'Amazon typically responds within 5-7 business days'],
-                    template: buildClaimTemplate('inventory', { fnsku, qty, event })
-                });
+            const event = (row['event-type'] || row['Event Type'] || row['eventType'] || '').toLowerCase();
+            if (!event.includes('lost') && !event.includes('damaged') && !event.includes('misplaced')) return;
+
+            const fnsku = (row['fnsku'] || row['FNSKU'] || 'N/A').trim();
+            const asin = (row['asin'] || row['ASIN'] || 'N/A').trim();
+            const key = fnsku !== 'N/A' ? fnsku : asin;
+
+            // Skip if already reimbursed in settlement
+            if (alreadyReimbursed.has(fnsku) || alreadyReimbursed.has(asin)) return;
+
+            const qty = Math.abs(parseInt(row['quantity'] || row['Quantity'] || 1));
+            const date = row['date'] || row['Date'] || row['transaction-item-id'] || '';
+            const transId = row['transaction-item-id'] || row['reference-id'] || row['Reference ID'] || '';
+            const dispositionStr = row['fulfilled-quantity'] || row['fulfillment-center-id'] || '';
+            const fc = row['fulfillment-center-id'] || row['Fulfillment Center ID'] || '';
+
+            if (!fnSkuGroups[key]) {
+                fnSkuGroups[key] = { fnsku, asin, qty: 0, events: [], date, transId, fc };
             }
+            fnSkuGroups[key].qty += qty;
+            fnSkuGroups[key].events.push(event);
+            if (!fnSkuGroups[key].transId && transId) fnSkuGroups[key].transId = transId;
+        });
+
+        Object.values(fnSkuGroups).slice(0, 20).forEach(item => {
+            const estimatedValue = item.qty * 700;
+            const eventType = item.events[0] || 'inventory loss';
+            const transactionType = eventType.includes('damage') ? 'DAMAGED' : eventType.includes('misplace') ? 'MISPLACED' : 'LOST_WAREHOUSE';
+
+            cases.push({
+                type: 'Inventory Loss — ' + transactionType,
+                priority: 'high',
+                amount: estimatedValue,
+                description: `${item.qty} unit(s) of FNSKU ${item.fnsku} (ASIN: ${item.asin}) flagged as "${eventType}" in your FBA Inventory Ledger with no matching reimbursement in your Settlement Report.`,
+                proof: `FNSKU: ${item.fnsku} · ASIN: ${item.asin} · Qty: ${item.qty} · Transaction type: ${transactionType}${item.date ? ' · Date: ' + item.date : ''}${item.transId ? ' · Ref ID: ' + item.transId : ''}${item.fc ? ' · FC: ' + item.fc : ''}`,
+                steps: [
+                    'Go to Seller Central → Help → Contact Us',
+                    'Select "Fulfillment by Amazon" → "FBA Inventory"',
+                    `Reference FNSKU: ${item.fnsku} and transaction type: ${transactionType}`,
+                    `Note quantity discrepancy: ${item.qty} unit(s)${item.date ? ', Date: ' + item.date : ''}`,
+                    'Amazon typically responds within 3–7 business days',
+                    'If denied, escalate once with the ledger data — most legitimate claims resolve on second contact'
+                ],
+                template: buildClaimTemplate('inventory', {
+                    fnsku: item.fnsku,
+                    asin: item.asin,
+                    qty: item.qty,
+                    event: transactionType,
+                    date: item.date,
+                    transId: item.transId,
+                    fc: item.fc
+                })
+            });
         });
     }
 
     if (returnData && returnData.rows.length > 0) {
         returnData.rows.forEach(row => {
-            const status = (row['status'] || row['Status'] || '').toLowerCase();
-            if (status.includes('refund') && !status.includes('return')) {
-                const orderId = row['order-id'] || row['Order ID'] || 'N/A';
-                const asin = row['asin'] || row['ASIN'] || 'N/A';
-                cases.push({
-                    type: 'Return Receipt Verification', priority: 'medium', amount: 850,
-                    description: `Order ${orderId} (${asin}) was refunded but no return receipt found.`,
-                    proof: `Order ID: ${orderId}, ASIN: ${asin}, Status: ${status}`,
-                    steps: ['Go to Seller Central → Help → Contact Us', 'Select "FBA" → "Customer Returns"', 'Provide the Order ID', 'Request verification of whether the item was returned', 'If not, request reimbursement per FBA policy'],
-                    template: buildClaimTemplate('return', { orderId, asin })
-                });
-            }
+            const status = (row['status'] || row['Status'] || row['return-reason'] || '').toLowerCase();
+            if (!status.includes('refund') || status.includes('returned') || status.includes('resellable')) return;
+
+            const orderId = row['order-id'] || row['Order ID'] || row['amazon-order-id'] || 'N/A';
+            const asin = row['asin'] || row['ASIN'] || 'N/A';
+            const sku = row['sku'] || row['SKU'] || 'N/A';
+            const returnDate = row['return-date'] || row['Return Date'] || row['date'] || '';
+            const refundAmount = parseFloat((row['refund-amount'] || row['amount-refunded'] || '0').toString().replace(/[₹,]/g, '')) || 850;
+            const reason = row['return-reason'] || row['Reason'] || status;
+
+            // Skip if this ASIN already reimbursed
+            if (alreadyReimbursed.has(asin)) return;
+
+            cases.push({
+                type: 'Customer Return — Item Not Received Back',
+                priority: 'medium',
+                amount: refundAmount,
+                description: `Order ${orderId} (ASIN: ${asin}) shows a refund issued but no corresponding return receipt in your FBA inventory. Return window has passed — you may be owed reimbursement.`,
+                proof: `Order ID: ${orderId} · ASIN: ${asin} · SKU: ${sku}${returnDate ? ' · Return date: ' + returnDate : ''} · Refund: ₹${refundAmount.toLocaleString('en-IN')} · Reason: ${reason}`,
+                steps: [
+                    'Go to Seller Central → Help → Contact Us',
+                    'Select "Fulfillment by Amazon" → "Customer Returns"',
+                    `Provide Order ID: ${orderId} and ASIN: ${asin}`,
+                    'Note that refund was issued but return was not received back into FBA inventory',
+                    'Request reimbursement per FBA Customer Returns Policy'
+                ],
+                template: buildClaimTemplate('return', { orderId, asin, sku, returnDate, refundAmount })
+            });
         });
     }
+
     return cases;
 }
 
@@ -2052,82 +2203,97 @@ function analyzeListingsSample() {
 // ============================================
 
 function buildClaimTemplate(type, data) {
+    const today = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
     const templates = {
-        fee: `Subject: Fee Category Verification Request
+        fee: `Subject: FBA Fee Category Verification — ASIN ${data.asin}
 
 Dear Amazon Seller Support,
 
-I am writing to request a review of the fee category applied to ASIN ${data.asin}.
+I am writing to request a review of the FBA fulfillment fee applied to the following product:
 
-Based on our records, the current fee applied is ${data.currentFee} per unit. However, the product dimensions and weight suggest it should fall under a fee tier of ${data.expectedFee} per unit.
+ASIN: ${data.asin}
+Current fee charged: ${data.currentFee} per unit
+Expected fee based on product dimensions/weight: ${data.expectedFee} per unit
+Units affected: ${data.units}
+Total potential overcharge: ${data.amount}
 
-This affects ${data.units} units, with a total potential difference of ${data.amount}.
+Per Amazon's FBA Fee Policy, fees are based on the actual dimensions and weight of the product as measured at the fulfillment center. I believe there may be a measurement error affecting this product's size tier classification.
 
-Could you please verify the fee classification and advise if an adjustment is warranted?
+Please review the fee classification for this ASIN and advise whether a remeasurement request is warranted. If overcharged, I request retroactive adjustment for the affected orders.
 
-Thank you for your assistance.
+Date of this request: ${today}
 
 Best regards,
-[Your Seller Name]
-Seller ID: [Your Seller ID]`,
+[Your Name]
+Seller ID: [Your Seller ID]
+Store Name: [Your Store Name]`,
 
-        inventory: `Subject: Inventory Reconciliation Request
+        inventory: `Subject: FBA Inventory Reimbursement Request — ${data.event || 'Lost/Damaged Units'}
 
 Dear Amazon Seller Support,
 
-I am writing to request a reconciliation review for the following discrepancy:
+I am requesting reimbursement for inventory discrepancy identified in my FBA Inventory Ledger:
 
 FNSKU: ${data.fnsku}
-Discrepancy: ${data.qty} unit(s) — ${data.event}
+ASIN: ${data.asin || 'N/A'}
+Quantity affected: ${data.qty} unit(s)
+Transaction type: ${data.event || 'LOST_WAREHOUSE'}${data.date ? '\nTransaction date: ' + data.date : ''}${data.transId ? '\nReference ID: ' + data.transId : ''}${data.fc ? '\nFulfillment Center: ' + data.fc : ''}
 
-Our records indicate these units were received but are no longer accounted for in available, reserved, or unfulfillable inventory.
+I have cross-referenced my FBA Inventory Ledger and cannot find a matching reimbursement entry for this discrepancy in my Settlement Reports.
 
-Could you please investigate and advise on next steps?
+Per Amazon's FBA Lost and Damaged Inventory Reimbursement Policy, I am entitled to reimbursement for inventory lost or damaged while under Amazon's control. I request you investigate and reimburse for the ${data.qty} unit(s) at the applicable reimbursement rate.
 
-Thank you.
+Date of this request: ${today}
 
 Best regards,
-[Your Seller Name]
-Seller ID: [Your Seller ID]`,
+[Your Name]
+Seller ID: [Your Seller ID]
+Store Name: [Your Store Name]`,
 
-        removal: `Subject: Removal Order Verification Request
+        return: `Subject: FBA Customer Return Reimbursement — Order ${data.orderId}
 
 Dear Amazon Seller Support,
 
-I would like to request verification of the following removal order:
+I am requesting a review of the following return transaction:
+
+Order ID: ${data.orderId}
+ASIN: ${data.asin}${data.sku ? '\nSKU: ' + data.sku : ''}${data.returnDate ? '\nReturn initiated: ' + data.returnDate : ''}${data.refundAmount ? '\nRefund issued to customer: ₹' + (typeof data.refundAmount === 'number' ? data.refundAmount.toLocaleString('en-IN') : data.refundAmount) : ''}
+
+A refund was issued to the customer for this order, but the item does not appear to have been received back into my FBA inventory. There is no corresponding positive inventory adjustment in my FBA Inventory Ledger following this refund.
+
+Per Amazon's FBA Customer Returns Policy, if a customer return is not received at the fulfillment center within 45 days of the refund, the seller is entitled to reimbursement.
+
+Please verify whether this item was returned to the warehouse. If not, I request reimbursement for the unit per policy.
+
+Date of this request: ${today}
+
+Best regards,
+[Your Name]
+Seller ID: [Your Seller ID]
+Store Name: [Your Store Name]`,
+
+        removal: `Subject: Removal Order Verification and Fee Review — ${data.orderId}
+
+Dear Amazon Seller Support,
+
+I am following up on a removal order:
 
 Removal Order ID: ${data.orderId}
-Units affected: ${data.units}
-Fee charged: ${data.fee}
+Units: ${data.units}
+Disposal fee charged: ${data.fee}
 
-The order is marked as completed but we have not received confirmation of the actual shipment. Could you please provide tracking details or confirm the status?
+This removal order shows as "Completed" however I have not received confirmation of the shipment. I am requesting verification of the disposal and, if units were not disposed of or shipped, a reversal of the disposal fees charged.
 
-If the removal was not completed, we would appreciate a review of the associated fees.
-
-Thank you.
+Date of this request: ${today}
 
 Best regards,
-[Your Seller Name]
-Seller ID: [Your Seller ID]`,
-
-        return: `Subject: Return Verification Request
-
-Dear Amazon Seller Support,
-
-I am writing regarding Order ID: ${data.orderId} (ASIN: ${data.asin}).
-
-A refund was issued for this order, but the return window has passed and the item does not appear to have been received back into our FBA inventory.
-
-Could you please verify whether the item was returned? If not, we would appreciate guidance on the reimbursement process per the FBA Customer Returns Policy.
-
-Thank you.
-
-Best regards,
-[Your Seller Name]
-Seller ID: [Your Seller ID]`
+[Your Name]
+Seller ID: [Your Seller ID]
+Store Name: [Your Store Name]`
     };
     return templates[type] || '';
 }
+
 
 // ============================================
 // CASE CARD BUILDER
@@ -3160,6 +3326,88 @@ function downloadText(data, serviceName) {
     URL.revokeObjectURL(a.href);
     showToast('Text report downloaded!');
     trackEvent('report_downloaded', { format: 'text', service: selectedService });
+}
+
+// ============================================
+// SESSION PERSISTENCE & CLAIM TRACKER
+// ============================================
+
+const SESSION_KEY = 'vikreya_sessions';
+const CLAIMS_KEY = 'vikreya_claim_status';
+
+function saveSession(session) {
+    try {
+        const sessions = JSON.parse(localStorage.getItem(SESSION_KEY) || '[]');
+        // Keep last 10 sessions
+        sessions.unshift({ ...session, id: 'session_' + Date.now() });
+        if (sessions.length > 10) sessions.pop();
+        localStorage.setItem(SESSION_KEY, JSON.stringify(sessions));
+    } catch(e) {}
+}
+
+function getClaimStatus(caseId) {
+    try {
+        const statuses = JSON.parse(localStorage.getItem(CLAIMS_KEY) || '{}');
+        return statuses[caseId] || 'pending';
+    } catch(e) { return 'pending'; }
+}
+
+function setClaimStatus(caseId, status) {
+    try {
+        const statuses = JSON.parse(localStorage.getItem(CLAIMS_KEY) || '{}');
+        statuses[caseId] = status;
+        localStorage.setItem(CLAIMS_KEY, JSON.stringify(statuses));
+        // Update UI badge
+        const badge = document.querySelector(`[data-claim-id="${caseId}"]`);
+        if (badge) {
+            badge.className = 'claim-status-badge status-' + status;
+            badge.textContent = { pending: 'Not filed', filed: 'Filed ✓', approved: 'Approved ✅', denied: 'Denied ✗' }[status] || status;
+        }
+        showToast('Status updated to: ' + status);
+    } catch(e) {}
+}
+
+function buildClaimTracker(cases) {
+    if (!cases || cases.length === 0) return '';
+    
+    const statusCounts = { pending: 0, filed: 0, approved: 0, denied: 0 };
+    cases.forEach(c => { statusCounts[getClaimStatus(c.id)]++; });
+    const totalApproved = cases.filter(c => getClaimStatus(c.id) === 'approved').reduce((sum, c) => sum + c.amount, 0);
+
+    return `<div class="claim-tracker-panel">
+        <div class="claim-tracker-header">
+            <h3>📊 Claim Tracker</h3>
+            <p class="claim-tracker-sub">Track which claims you've filed and their outcomes. Saved to your browser.</p>
+        </div>
+        <div class="claim-tracker-stats">
+            <div class="ct-stat"><span class="ct-num">${statusCounts.pending}</span><span class="ct-label">Not filed</span></div>
+            <div class="ct-stat ct-filed"><span class="ct-num">${statusCounts.filed}</span><span class="ct-label">Filed</span></div>
+            <div class="ct-stat ct-approved"><span class="ct-num">${statusCounts.approved}</span><span class="ct-label">Approved</span></div>
+            <div class="ct-stat ct-denied"><span class="ct-num">${statusCounts.denied}</span><span class="ct-label">Denied</span></div>
+        </div>
+        ${totalApproved > 0 ? `<div class="ct-recovered">₹${totalApproved.toLocaleString('en-IN')} recovered so far</div>` : ''}
+        <div class="claim-tracker-list">
+            ${cases.map(c => `
+                <div class="ct-row">
+                    <div class="ct-case-info">
+                        <span class="ct-case-type">${c.type}</span>
+                        <span class="ct-case-amount">₹${c.amount.toLocaleString('en-IN')}</span>
+                    </div>
+                    <div class="ct-controls">
+                        <span class="claim-status-badge status-${getClaimStatus(c.id)}" data-claim-id="${c.id}">
+                            ${{ pending: 'Not filed', filed: 'Filed ✓', approved: 'Approved ✅', denied: 'Denied ✗' }[getClaimStatus(c.id)]}
+                        </span>
+                        <select class="ct-select" onchange="setClaimStatus('${c.id}', this.value)">
+                            <option value="pending" ${getClaimStatus(c.id) === 'pending' ? 'selected' : ''}>Not filed</option>
+                            <option value="filed" ${getClaimStatus(c.id) === 'filed' ? 'selected' : ''}>Filed</option>
+                            <option value="approved" ${getClaimStatus(c.id) === 'approved' ? 'selected' : ''}>Approved</option>
+                            <option value="denied" ${getClaimStatus(c.id) === 'denied' ? 'selected' : ''}>Denied</option>
+                        </select>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    </div>`;
 }
 
 // ============================================
