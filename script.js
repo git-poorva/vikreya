@@ -1034,19 +1034,34 @@ function feeAuditSampleData() {
 function analyzePPC() {
     const hasPPCData = Object.values(parsedData).some(d => d.type === 'searchterm' || d.type === 'targeting');
     const a = hasPPCData ? ppcParseReal() : ppcSampleData();
-    const estRevGain = Math.round(a.scaleOpp * 1.5);
+    const hasBizData = hasPPCData && a.hasBizData;
+    const estRevGain = Math.round(a.scaleOpp + (a.totalWaste || 0));
 
     let html = `<div class="results-header">
         <h2>PPC growth report</h2>
         <div class="big-number">₹${estRevGain.toLocaleString('en-IN')}</div>
-        <p class="results-meta">Estimated additional monthly revenue from actions below</p>
+        <p class="results-meta">Estimated monthly impact from actions below</p>
         <div class="results-meta">
             <span>₹${a.totalSpend.toLocaleString('en-IN')} spend analyzed</span> ·
             <span>${a.total} search terms</span> ·
             <span>Avg ACoS: ${a.avgAcos}%</span>
+            ${a.avgCpc ? ' · <span>Avg CPC: ₹' + a.avgCpc + '</span>' : ''}
         </div>
         ${!hasPPCData ? '<p style="font-size:13px;color:var(--gold);margin-top:12px;">Showing sample — upload your Search Term Report for real results</p>' : ''}
     </div>`;
+
+    // ---- ACCURACY BANNER: prompt for Business Report if not uploaded ----
+    if (hasPPCData && !hasBizData) {
+        html += `<div style="background:#fffbeb;border:1px solid #d97706;border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:start;gap:12px;">
+            <span style="font-size:20px;line-height:1.4;">💡</span>
+            <div>
+                <strong style="color:#92400e;font-size:14px;">Better ACoS accuracy available</strong>
+                <p style="margin:4px 0 0;font-size:13px;color:#78350f;">
+                    Upload your <strong>Business Report</strong> (Reports → Business Reports → Detail Page Sales and Traffic) alongside the Search Term Report. Without it, ACoS for orders with missing revenue data uses your account average order value (₹${a.accountAOV}) — which may be off for individual products. With the Business Report, ACoS is calculated from actual per-product revenue.
+                </p>
+            </div>
+        </div>`;
+    }
 
     // ---- CARD 1: SCALE — Keywords to grow ----
     if (a.scale.length > 0) {
@@ -1054,20 +1069,29 @@ function analyzePPC() {
             'Keywords ready to scale — increase bids to win more sales',
             '+₹' + a.scaleOpp.toLocaleString('en-IN') + '/mo', true);
         html += `<div class="case-section"><h4>Why these keywords deserve more budget</h4>
-            <p>These terms already convert well — low ACoS, consistent orders. Raising bids by ₹1-3 pushes you into top-of-search placement, where conversion rates run 2-3× higher on Amazon.in.</p></div>
-            <div class="case-section"><h4>Keywords to boost (by profit potential)</h4>`;
+            <p>These terms already convert well with profitable ACoS. Raising bids pushes you into top-of-search placement, where conversion rates run 2-3× higher on Amazon.in. Sorted by ad profit (revenue minus spend).</p></div>
+            <div class="case-section"><h4>Keywords to boost (by ad profit)</h4>`;
         a.scale.forEach(k => {
             const newBid = Math.round(k.cpc * 1.25 * 100) / 100;
-            const addOrders = Math.max(1, Math.round(k.orders * 0.4));
+            const addOrders = Math.max(1, Math.round(k.orders * 0.3));
+            const trendBadge = k.trend && k.trend.dir === 'rising'
+                ? `<span style="font-size:11px;background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:4px;margin-left:6px;">📈 +${k.trend.orderChange}% orders</span>`
+                : k.trend && k.trend.dir === 'declining'
+                ? `<span style="font-size:11px;background:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:4px;margin-left:6px;">📉 -${k.trend.orderChange}% orders</span>`
+                : '';
             html += `<div style="padding:14px 0;border-bottom:1px solid var(--border);">
-                <div style="display:flex;justify-content:space-between;align-items:start;">
-                    <div><strong>"${k.keyword}"</strong>
-                        <span style="font-size:11px;background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:4px;margin-left:8px;">${k.acos}% ACoS</span></div>
-                    <span style="font-weight:700;color:var(--green);">${k.orders} orders</span>
+                <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:4px;">
+                    <div>
+                        <strong>"${k.keyword}"</strong>
+                        <span style="font-size:11px;background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:4px;margin-left:8px;">${k.acos}% ACoS</span>
+                        ${trendBadge}
+                    </div>
+                    <span style="font-weight:700;color:var(--green);">${k.orders} orders · ₹${k.adProfit.toLocaleString('en-IN')} ad profit</span>
                 </div>
-                <p style="font-size:13px;color:var(--text-mid);margin-top:4px;">${k.clicks} clicks · ₹${k.spend.toLocaleString('en-IN')} spend · CPC: ₹${k.cpc} · CVR: ${k.cvr}%</p>
+                <p style="font-size:13px;color:var(--text-mid);margin-top:4px;">${k.clicks} clicks · ₹${k.spend.toLocaleString('en-IN')} spend · CPC: ₹${k.cpc} · CVR: ${k.cvr}%${k.ctr ? ' · CTR: ' + k.ctr + '%' : ''}</p>
                 <p style="font-size:13px;margin-top:6px;"><strong>→ Raise bid to ₹${newBid}</strong> (from ₹${k.cpc}) · Could add ~${addOrders} orders/month
-                ${k.matchNote ? '<br><span style="color:var(--sage);">💡 ' + k.matchNote + '</span>' : ''}</p>
+                ${k.matchNote ? '<br><span style="color:var(--sage);">💡 ' + k.matchNote + '</span>' : ''}
+                ${k.trendNote ? '<br><span style="color:#15803d;">' + k.trendNote + '</span>' : ''}</p>
             </div>`;
         });
         html += `</div>
@@ -1076,24 +1100,45 @@ function analyzePPC() {
                 <li>Find the keyword, click the bid amount</li>
                 <li>Increase by ₹1-3 (never more than 25% at a time)</li>
                 <li>Check results after 7 days — if ACoS stays under target, increase again</li>
-                <li>For your top 3 keywords, also go to "Adjust bids by placement" → set +50% for top-of-search</li>
+                <li>For your top 3 keywords, go to "Adjust bids by placement" → set +50% for top-of-search</li>
             </ol></div></div></div>`;
     }
 
-    // ---- CARD 2: AUTO → MANUAL migration ----
+    // ---- CARD 2: RISING KEYWORDS — under-bid opportunity ----
+    if (a.underBid && a.underBid.length > 0) {
+        html += ppcCard('risingKw', 'MOMENTUM', '#f0fdf4', '#15803d',
+            'Rising keywords — gaining traction, may need more budget',
+            a.underBid.length + ' trending up', false);
+        html += `<div class="case-section"><h4>What this means</h4>
+            <p>These keywords showed order growth of 20%+ in the second half of your date range vs the first. They're gaining traction — but if your bid is too low, you'll lose placement just as the keyword heats up. Act before competitors notice.</p></div>
+            <div class="case-section"><h4>Keywords gaining momentum</h4>`;
+        a.underBid.forEach(k => {
+            html += `<div style="padding:12px 0;border-bottom:1px solid var(--border);">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
+                    <strong>"${k.keyword}"</strong>
+                    <span style="font-size:12px;background:#dcfce7;color:#15803d;padding:3px 10px;border-radius:99px;font-weight:700;">📈 Orders +${k.trend.orderChange}%</span>
+                </div>
+                <p style="font-size:13px;color:var(--text-mid);margin-top:4px;">${k.orders} total orders · ACoS: ${k.acos}% · CPC: ₹${k.cpc} · CVR: ${k.cvr}%</p>
+                <p style="font-size:13px;margin-top:4px;"><strong>→ Increase bid by ₹${Math.round(k.cpc * 0.2 * 100) / 100}–₹${Math.round(k.cpc * 0.35 * 100) / 100}</strong> to capture more of this growing demand</p>
+            </div>`;
+        });
+        html += `</div></div></div>`;
+    }
+
+    // ---- CARD 3: AUTO → MANUAL migration ----
     if (a.migrate.length > 0) {
         html += ppcCard('a2m', 'GROW', '#f0fdf4', '#15803d',
             'Move these from auto to manual exact match',
             a.migrate.length + ' keywords', false);
         html += `<div class="case-section"><h4>What this means</h4>
-            <p>These keywords were discovered by auto-targeting and they're converting. In auto campaigns you can't control the bid per keyword. Moving to manual exact-match gives you full control — you set the bid, the budget, and the placement.</p>
+            <p>These keywords were discovered by auto-targeting and they're converting. In auto campaigns you can't control the bid per keyword. Moving to manual exact-match gives you full control — bid, budget, placement.</p>
             <p style="margin-top:8px;">This is the single most effective PPC growth strategy used by top Amazon.in sellers.</p></div>
             <div class="case-section"><h4>Keywords to migrate</h4>`;
         a.migrate.forEach(k => {
             html += `<div style="padding:10px 0;border-bottom:1px solid var(--border);">
                 <strong>"${k.keyword}"</strong>
                 <span style="font-size:11px;background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:4px;margin-left:8px;">${k.orders} orders · ${k.acos}% ACoS</span>
-                <p style="font-size:13px;color:var(--text-mid);margin-top:3px;">Suggested starting bid: ₹${k.sugBid} (exact match) · Also negate this in the auto campaign</p>
+                <p style="font-size:13px;color:var(--text-mid);margin-top:3px;">Suggested starting bid: ₹${k.sugBid} (exact match) · Negate this in the auto campaign too</p>
             </div>`;
         });
         html += `</div>
@@ -1111,13 +1156,13 @@ function analyzePPC() {
             </div></div></div>`;
     }
 
-    // ---- CARD 3: LONG-TAIL opportunities ----
+    // ---- CARD 4: LONG-TAIL opportunities ----
     if (a.longTail.length > 0) {
         html += ppcCard('ltOpp', 'OPPORTUNITY', '#faf5ff', '#7c3aed',
             'Long-tail keywords — low competition, high buyer intent',
             a.longTail.length + ' found', false);
         html += `<div class="case-section"><h4>Why long-tail keywords matter on Amazon.in</h4>
-            <p>4+ word searches ("noise cancelling earbuds under 2000 for gym") have lower CPC and higher conversion. The shopper already knows what they want — your job is just to show up. These are often the most profitable terms in any account.</p></div>
+            <p>4+ word searches have lower CPC and higher conversion. The shopper already knows what they want. These are often the most profitable terms in any account.</p></div>
             <div class="case-section"><h4>High-intent terms to target</h4>`;
         a.longTail.forEach(k => {
             html += `<div style="padding:10px 0;border-bottom:1px solid var(--border);">
@@ -1129,12 +1174,11 @@ function analyzePPC() {
         html += `</div></div></div>`;
     }
 
-    // ---- CARD 4: SEARCH TERM BREAKDOWN ----
+    // ---- CARD 5: SEARCH TERM BREAKDOWN ----
     html += ppcCard('catBreak', 'INSIGHTS', '#fffbeb', '#b45309',
         'Where your ad money actually goes', a.total + ' terms', false);
     html += `<div class="case-section"><h4>Search term categories</h4>
         <p>Understanding the types of searches triggering your ads helps you move budget to where it matters.</p></div><div class="case-section">`;
-
     const catMeta = {
         branded:    { color: '#1d4ed8', label: 'Brand terms (your brand)', advice: 'Low CPC, high conversion. Defend these — bid enough to own your brand searches.' },
         competitor: { color: '#b45309', label: 'Competitor terms', advice: 'High ACoS usually. Only worth it if you offer a clear alternative at a better price.' },
@@ -1155,7 +1199,7 @@ function analyzePPC() {
     });
     html += `</div></div></div>`;
 
-    // ---- CARD 5: DEAD KEYWORDS ----
+    // ---- CARD 6: DEAD KEYWORDS ----
     if (a.dead.length > 0) {
         html += ppcCard('deadKw', 'CUT WASTE', '#fef2f2', '#dc2626',
             'Dead keywords — negate immediately',
@@ -1183,44 +1227,173 @@ function analyzePPC() {
             </ol></div></div></div>`;
     }
 
-    // ---- CARD 6: CANNIBALIZATION ----
+    // ---- CARD 7: DECLINING HIGH-SPEND ----
+    if (a.declining && a.declining.length > 0) {
+        const decliningWaste = a.declining.reduce((s, k) => s + k.spend, 0);
+        html += ppcCard('declKw', 'REVIEW', '#fff7ed', '#c2410c',
+            'High-spend keywords losing efficiency — investigate before next cycle',
+            a.declining.length + ' keywords', false);
+        html += `<div class="case-section"><h4>What's happening</h4>
+            <p>These keywords have significant spend but orders dropped 20%+ in the second half of your date range. This could mean: increased competition, listing degradation, pricing shift, or a seasonal drop. Don't scale these — fix the root cause first.</p></div>
+            <div class="case-section"><h4>Keywords to review</h4>`;
+        a.declining.forEach(k => {
+            html += `<div style="padding:12px 0;border-bottom:1px solid var(--border);">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
+                    <strong>"${k.keyword}"</strong>
+                    <span style="font-size:12px;background:#fef2f2;color:#dc2626;padding:3px 10px;border-radius:99px;font-weight:700;">📉 Orders -${k.trend.orderChange}%</span>
+                </div>
+                <p style="font-size:13px;color:var(--text-mid);margin-top:4px;">₹${k.spend.toLocaleString('en-IN')} spend · ${k.orders} orders · ACoS: ${k.acos}% · CVR: ${k.cvr}%</p>
+                <p style="font-size:13px;margin-top:4px;color:#c2410c;"><strong>→ Reduce bid by 20% while you investigate.</strong> Check: listing images, pricing vs competitors, recent reviews, sponsored placement vs organic rank.</p>
+            </div>`;
+        });
+        html += `</div></div></div>`;
+    }
+
+    // ---- CARD 8: AD-GROUP LEVEL CANNIBALIZATION ----
     if (a.cannibal.length > 0) {
         html += ppcCard('canKw', 'FIX', '#fff7ed', '#c2410c',
-            'Keyword cannibalization — your campaigns compete against each other',
+            'Keyword cannibalization — campaigns competing against each other',
             a.cannibal.length + ' duplicates', false);
         html += `<div class="case-section"><h4>What's happening</h4>
-            <p>The same search term shows up in multiple campaigns. Your own campaigns bid against each other, driving up CPC and splitting your data. This is one of the most common and expensive PPC mistakes.</p></div>
-            <div class="case-section"><h4>Duplicate search terms</h4>`;
+            <p>The same search term is active in multiple campaigns or ad groups. Amazon runs an internal auction between your own ads, driving up your CPC and splitting your data. This inflates costs and suppresses your own organic rank signals.</p></div>
+            <div class="case-section"><h4>Duplicate search terms (with recommended action)</h4>`;
         a.cannibal.forEach(k => {
-            html += `<div style="padding:10px 0;border-bottom:1px solid var(--border);">
+            const bestLabel = k.best.adGroup ? `${k.best.campaign} / ${k.best.adGroup}` : k.best.campaign;
+            const othersLabel = k.others.map(e => e.adGroup ? `${e.campaign} / ${e.adGroup}` : e.campaign).join(', ');
+            const typeNote = k.sameCampaign
+                ? '<em>Same campaign, different ad groups</em> — this is ad-group-level cannibalization, often missed.'
+                : '<em>Across multiple campaigns</em>';
+            html += `<div style="padding:12px 0;border-bottom:1px solid var(--border);">
                 <strong>"${k.keyword}"</strong>
-                <p style="font-size:13px;color:var(--text-mid);">Found in ${k.camps.length} campaigns: ${k.camps.join(', ')}<br>
-                Total spend: ₹${k.totalSpend.toLocaleString('en-IN')} · Total orders: ${k.totalOrders}</p>
-                <p style="font-size:13px;margin-top:4px;"><strong>→ Keep in the best-performing campaign, negate in all others</strong></p>
+                <span style="font-size:11px;color:var(--text-mid);margin-left:8px;">${typeNote}</span>
+                <p style="font-size:13px;color:var(--text-mid);margin-top:4px;">Total spend: ₹${k.totalSpend.toLocaleString('en-IN')} · Total orders: ${k.totalOrders}</p>
+                <div style="margin-top:8px;background:var(--bg);border-radius:8px;padding:10px 12px;font-size:13px;">
+                    <div style="color:var(--green);font-weight:600;">✓ Keep active in: ${bestLabel}${k.best.acos > 0 ? ' (ACoS: ' + k.best.acos + '%)' : ''}</div>
+                    <div style="color:#dc2626;margin-top:4px;">✗ Negate in: ${othersLabel}</div>
+                </div>
             </div>`;
         });
         html += `</div><div class="case-section"><h4>How to fix</h4><ol>
-                <li>Find which campaign has the best ACoS for each keyword</li>
-                <li>Keep the keyword active only in that campaign</li>
-                <li>Add as negative exact in all other campaigns</li>
-                <li>This consolidates data, lowers CPC, gives Amazon clearer signals</li>
+                <li>For each keyword above, go to the campaigns listed under "Negate in"</li>
+                <li>Negative Keywords tab → Add as Negative Exact</li>
+                <li>For ad-group-level: go to the specific ad group → Negative Keywords → add there</li>
+                <li>This consolidates data, lowers CPC, and gives Amazon cleaner relevance signals</li>
+                <li>Re-run this analysis in 2 weeks to verify CPC dropped</li>
             </ol></div></div></div>`;
     }
 
-    // ---- CARD 7: ACTION PLAN ----
-    const monthlyGain = a.scaleOpp + a.totalWaste;
+    // ---- CARD 9 (Phase 2): CAMPAIGN BUDGET EFFICIENCY ----
+    if (a.campaigns && a.campaigns.length > 0) {
+        const bestCamp = a.campaigns.filter(c => c.acos > 0 && c.acos < 999).sort((a, b) => a.acos - b.acos)[0];
+        const worstCamp = a.campaigns.filter(c => c.acos > 0 && c.orders > 0).sort((a, b) => b.acos - a.acos)[0];
+        const totalCampSpend = a.campaigns.reduce((s, c) => s + c.spend, 0);
+        html += ppcCard('campEff', 'BUDGET', '#f0fdf4', '#15803d',
+            'Campaign budget efficiency — where your money actually works',
+            a.campaigns.length + ' campaigns', false);
+        html += `<div class="case-section"><h4>What this shows</h4>
+            <p>Most sellers focus on keywords, but campaign-level ACoS reveals structural problems. A campaign with good search terms but poor ACoS usually means the budget cap is too low (missing peak hours) or the bid strategy is wrong. A campaign with low spend but good ACoS is underfunded.</p></div>
+            <div class="case-section"><h4>Campaign breakdown (by spend)</h4>
+            <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px;">
+                <thead><tr style="border-bottom:1px solid var(--border);">
+                    <th style="text-align:left;padding:8px 6px;color:var(--text-light);font-weight:500;">Campaign</th>
+                    <th style="text-align:right;padding:8px 6px;color:var(--text-light);font-weight:500;">Spend</th>
+                    <th style="text-align:right;padding:8px 6px;color:var(--text-light);font-weight:500;">Orders</th>
+                    <th style="text-align:right;padding:8px 6px;color:var(--text-light);font-weight:500;">ACoS</th>
+                    <th style="text-align:right;padding:8px 6px;color:var(--text-light);font-weight:500;">CVR</th>
+                    <th style="text-align:right;padding:8px 6px;color:var(--text-light);font-weight:500;">Spend %</th>
+                </tr></thead>
+                <tbody>
+                ${a.campaigns.slice(0, 15).map(c => {
+                    const spendPct = totalCampSpend > 0 ? Math.round(c.spend / totalCampSpend * 100) : 0;
+                    const acosColor = c.acos === 999 ? '#dc2626' : c.acos <= 25 ? 'var(--green)' : c.acos <= 40 ? '#d97706' : '#dc2626';
+                    const isWorst = worstCamp && c.campaign === worstCamp.campaign;
+                    const isBest = bestCamp && c.campaign === bestCamp.campaign;
+                    return `<tr style="border-bottom:1px solid var(--border);${isWorst ? 'background:#1c1917;' : isBest ? 'background:#052e16;' : ''}">
+                        <td style="padding:9px 6px;color:var(--text);font-weight:${isWorst || isBest ? '600' : '400'};">
+                            ${c.campaign.length > 28 ? c.campaign.substring(0, 25) + '...' : c.campaign}
+                            ${isBest ? ' <span style="font-size:10px;background:#166534;color:#86efac;padding:1px 5px;border-radius:3px;">BEST</span>' : ''}
+                            ${isWorst ? ' <span style="font-size:10px;background:#7f1d1d;color:#fca5a5;padding:1px 5px;border-radius:3px;">WORST</span>' : ''}
+                        </td>
+                        <td style="text-align:right;padding:9px 6px;color:var(--text-mid);">₹${c.spend.toLocaleString('en-IN', {maximumFractionDigits:0})}</td>
+                        <td style="text-align:right;padding:9px 6px;color:var(--text-mid);">${c.orders}</td>
+                        <td style="text-align:right;padding:9px 6px;color:${acosColor};font-weight:600;">${c.acos === 999 ? '∞' : c.acos + '%'}</td>
+                        <td style="text-align:right;padding:9px 6px;color:var(--text-mid);">${c.cvr}%</td>
+                        <td style="text-align:right;padding:9px 6px;">
+                            <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;">
+                                <div style="background:var(--border);width:60px;height:4px;border-radius:2px;">
+                                    <div style="background:var(--sage);height:4px;border-radius:2px;width:${Math.min(spendPct, 100)}%;"></div>
+                                </div>
+                                <span style="font-size:12px;color:var(--text-mid);width:26px;text-align:right;">${spendPct}%</span>
+                            </div>
+                        </td>
+                    </tr>`;
+                }).join('')}
+                </tbody>
+            </table></div></div>
+            ${bestCamp && worstCamp && bestCamp.campaign !== worstCamp.campaign ? `
+            <div class="case-section"><h4>Action</h4>
+                <p><strong>Move budget from worst to best:</strong> "${worstCamp.campaign}" has ${worstCamp.acos}% ACoS — consider pausing or cutting its daily budget by 50%. Reallocate to "${bestCamp.campaign}" (${bestCamp.acos}% ACoS) which is your most efficient campaign and likely budget-constrained.</p>
+                <p style="margin-top:8px;font-size:13px;color:var(--text-mid);">In Campaign Manager, set a lower daily budget for the worst performer and increase the best performer's budget by the same amount. Monitor for 7 days.</p>
+            </div>` : ''}
+            </div></div>`;
+    }
+
+    // ---- CARD 10 (Phase 2): BROAD MATCH BLEED ----
+    if (a.broadBleed && a.broadBleed.length > 0) {
+        const totalBleedWaste = a.broadBleed.reduce((s, k) => s + k.totalWasteAmt, 0);
+        html += ppcCard('broadBleed', 'FIX', '#fef2f2', '#dc2626',
+            'Broad match bleed — keywords triggering irrelevant search terms',
+            '₹' + Math.round(totalBleedWaste).toLocaleString('en-IN') + ' wasted', false);
+        html += `<div class="case-section"><h4>What broad match bleed means</h4>
+            <p>Your broad or phrase match keywords are triggering searches that have nothing to do with your product. Amazon charges you for every click — even irrelevant ones. The fix is simple: add the wasted search terms as <strong>negative exact</strong> keywords on the broad match campaign. This cuts waste without reducing reach on the good terms.</p></div>
+            <div class="case-section"><h4>Affected keywords (sorted by waste)</h4>`;
+        a.broadBleed.forEach(kw => {
+            const kwAcos = kw.sales > 0 ? Math.round(kw.spend / kw.sales * 100) : 999;
+            html += `<div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
+                    <div>
+                        <strong style="font-size:14px;">"${kw.keyword}"</strong>
+                        <span style="font-size:11px;background:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:4px;margin-left:8px;">${kw.matchType} match</span>
+                    </div>
+                    <span style="color:#dc2626;font-weight:700;white-space:nowrap;">₹${Math.round(kw.totalWasteAmt).toLocaleString('en-IN')} wasted</span>
+                </div>
+                <p style="font-size:13px;color:var(--text-mid);margin-bottom:8px;">Overall ACoS: ${kwAcos === 999 ? '∞' : kwAcos + '%'} · ${kw.clicks} clicks · ${kw.orders} orders · ${kw.searchTerms.length} search terms triggered</p>
+                <div style="font-size:12px;color:var(--text-mid);margin-bottom:6px;font-weight:600;">Wasted search terms — add as negatives (paste into Campaign Manager):</div>
+                <div class="claim-template" style="font-size:12px;padding:10px 12px;">${kw.wasteTerms.slice(0, 10).map(t => t.term).join('\n')}</div>
+                <div class="claim-actions"><button class="btn-copy" onclick="event.stopPropagation(); copyTemplate(this)">Copy negative keywords</button></div>
+                ${kw.goodTerms.length > 0 ? `<div style="margin-top:10px;font-size:12px;color:var(--green);">✓ ${kw.goodTerms.length} converting terms worth keeping: ${kw.goodTerms.slice(0, 3).map(t => '"' + t.term + '"').join(', ')}${kw.goodTerms.length > 3 ? ' + ' + (kw.goodTerms.length - 3) + ' more' : ''}</div>` : ''}
+            </div>`;
+        });
+        html += `</div><div class="case-section"><h4>How to add negatives in bulk</h4><ol>
+            <li>Go to Campaign Manager → select the affected campaign</li>
+            <li>Click <strong>Negative Keywords</strong> tab</li>
+            <li>Click <strong>Add negative keywords</strong></li>
+            <li>Paste the list above, select <strong>Negative Exact</strong></li>
+            <li>Click Save — takes effect within a few hours</li>
+        </ol></div></div></div>`;
+    }
+
+    // ---- CARD 11: ACTION PLAN ----
+    const bleedWaste = a.broadBleed ? Math.round(a.broadBleed.reduce((s, k) => s + k.totalWasteAmt, 0)) : 0;
+    const monthlyGain = (a.scaleOpp || 0) + (a.totalWaste || 0) + bleedWaste;
     html += ppcCard('projKw', 'ACTION PLAN', '#f0fdf4', '#15803d',
         'Your 30-day plan and projected impact',
         '₹' + (monthlyGain * 12).toLocaleString('en-IN') + '/yr', true);
-    html += `<div class="case-section"><h4>If you act this week</h4><ol>
-        <li><strong>Today:</strong> Add ${a.dead.length} negative keywords → saves ₹${a.totalWaste.toLocaleString('en-IN')}/month immediately</li>
-        ${a.scale.length > 0 ? '<li><strong>Today:</strong> Raise bids on ' + a.scale.length + ' top performers → estimated +₹' + a.scaleOpp.toLocaleString('en-IN') + '/month revenue</li>' : ''}
-        ${a.migrate.length > 0 ? '<li><strong>This week:</strong> Migrate ' + a.migrate.length + ' keywords from auto → manual exact match</li>' : ''}
-        ${a.cannibal.length > 0 ? '<li><strong>This week:</strong> Fix ' + a.cannibal.length + ' cannibalized keywords</li>' : ''}
+    html += `<div class="case-section"><h4>Priority actions this week</h4><ol>
+        ${a.dead && a.dead.length > 0 ? '<li><strong>Today:</strong> Add ' + a.dead.length + ' negative keywords from dead search terms → saves ₹' + a.totalWaste.toLocaleString('en-IN') + ' in analyzed period</li>' : ''}
+        ${a.broadBleed && a.broadBleed.length > 0 ? '<li><strong>Today:</strong> Add negatives from ' + a.broadBleed.length + ' broad match keywords with bleed → saves ₹' + bleedWaste.toLocaleString('en-IN') + ' in analyzed period</li>' : ''}
+        ${a.scale && a.scale.length > 0 ? '<li><strong>Today:</strong> Raise bids on ' + a.scale.length + ' top performers by ad profit → +₹' + a.scaleOpp.toLocaleString('en-IN') + ' estimated</li>' : ''}
+        ${a.underBid && a.underBid.length > 0 ? '<li><strong>Today:</strong> Increase bids on ' + a.underBid.length + ' rising/accelerating keywords before competition catches up</li>' : ''}
+        ${a.campaigns && a.campaigns.length > 1 ? '<li><strong>This week:</strong> Review campaign budget table — shift daily budget from worst to best-performing campaign</li>' : ''}
+        ${a.migrate && a.migrate.length > 0 ? '<li><strong>This week:</strong> Migrate ' + a.migrate.length + ' keywords from auto → manual exact match</li>' : ''}
+        ${a.cannibal && a.cannibal.length > 0 ? '<li><strong>This week:</strong> Fix ' + a.cannibal.length + ' cannibalized keywords — add negatives in underperforming campaigns</li>' : ''}
+        ${a.declining && a.declining.length > 0 ? '<li><strong>This week:</strong> Reduce bids 20% on ' + a.declining.length + ' declining high-spend keywords while you investigate root cause</li>' : ''}
         <li><strong>Next week:</strong> Re-download Search Term Report and run this analysis again to measure progress</li>
     </ol></div>
     <div class="case-section">
-        <p style="font-size:15px;"><strong>Projected annual impact: ₹${(monthlyGain * 12).toLocaleString('en-IN')}</strong> in revenue gained and ad waste recovered.</p>
+        <p style="font-size:15px;"><strong>Projected impact from analyzed period: ₹${monthlyGain.toLocaleString('en-IN')}</strong> in revenue gained and ad waste recovered.</p>
+        ${hasBizData ? '<p style="font-size:13px;color:var(--text-mid);margin-top:8px;">✓ ACoS calculated using actual per-ASIN revenue from your Business Report for maximum accuracy.</p>' : '<p style="font-size:13px;color:var(--text-mid);margin-top:8px;">ACoS estimated using account average order value (₹' + a.accountAOV + '). Upload your Business Report alongside the Search Term Report for per-product ACoS accuracy.</p>'}
     </div></div></div>`;
 
     return html;
@@ -1241,68 +1414,252 @@ function ppcCard(id, badge, badgeBg, badgeColor, title, amount, open) {
 function ppcParseReal() {
     const searchData = Object.values(parsedData).find(d => d.type === 'searchterm');
     const rows = (searchData && searchData.rows) || [];
+
+    // ---- BUILD ASIN-LEVEL AOV FROM BUSINESS REPORT ----
+    // Phase 2: per-ASIN AOV so ACoS estimation is per-product not account-average
+    const bizData = Object.values(parsedData).find(d => d.type === 'business');
+    const asinAOV = {}; // asin → AOV
+    let accountAOV = 700; // India FBA seller reasonable default
+    let accountTotalSales = 0, accountTotalUnits = 0;
+
+    if (bizData && bizData.rows && bizData.rows.length > 0) {
+        // Aggregate per ASIN across all date rows
+        const asinMap = {};
+        bizData.rows.forEach(r => {
+            const asin = (r['(Child) ASIN'] || r['ASIN'] || r['asin'] || '').trim();
+            const s = parseFloat((r['Ordered Product Sales'] || r['ordered-product-sales'] || '0').toString().replace(/[₹,]/g, '')) || 0;
+            const u = parseInt((r['Units Ordered'] || r['units-ordered'] || r['Units'] || '0').toString().replace(/,/g, '')) || 0;
+            if (asin) {
+                if (!asinMap[asin]) asinMap[asin] = { sales: 0, units: 0 };
+                asinMap[asin].sales += s;
+                asinMap[asin].units += u;
+            }
+            accountTotalSales += s;
+            accountTotalUnits += u;
+        });
+        Object.entries(asinMap).forEach(([asin, d]) => {
+            if (d.units > 0) asinAOV[asin] = Math.round(d.sales / d.units);
+        });
+        if (accountTotalUnits > 0) accountAOV = Math.round(accountTotalSales / accountTotalUnits);
+    }
+
+    // Helper: get best available AOV for a keyword (from ASIN map if possible, else account average)
+    function getAOV(asin) {
+        if (asin && asinAOV[asin]) return asinAOV[asin];
+        return accountAOV;
+    }
+
     const allTerms = [];
-    const campMap = {}; // keyword → [campaigns]
+    // campAdGroupMap[keyword] = [{campaign, adGroup, spend, orders, acos}] for ad-group-level cannibalization
+    const campAdGroupMap = {};
+    // dateMap[keyword] = [{date, orders, spend, sales}] for trend detection
+    const dateMap = {};
+    // Phase 2: kwMap[targeted_keyword] → [{searchTerm, ...}] for broad match analysis
+    // Note: Amazon Search Term report has both "Targeting" (the keyword you bid on) and "Customer Search Term" (what they typed)
+    const kwTargetMap = {};
+    // campMap[campaign] → {spend, orders, sales, clicks} for budget efficiency
+    const campMap = {};
 
     rows.forEach(row => {
-        const keyword = (row['Customer Search Term'] || row['customer-search-term'] || row['Search Term'] || '').trim().toLowerCase();
-        if (!keyword) return;
+        const searchTerm = (row['Customer Search Term'] || row['customer-search-term'] || row['Search Term'] || '').trim().toLowerCase();
+        // "Targeting" is the keyword/ASIN the seller bid on; may or may not be present
+        const targetedKw = (row['Targeting'] || row['targeting'] || row['Keyword'] || row['keyword'] || searchTerm).trim().toLowerCase();
+        const asin = (row['ASIN'] || row['asin'] || '').trim();
+
+        if (!searchTerm) return;
+
         const campaign = row['Campaign Name'] || row['campaign-name'] || 'Unknown';
+        const adGroup = row['Ad Group Name'] || row['ad-group-name'] || row['AdGroup'] || '';
         const matchType = (row['Match Type'] || row['match-type'] || '').toLowerCase();
-        const spend = parseFloat((row['Spend'] || row['spend'] || row['Cost'] || '0').toString().replace(/[₹,]/g, ''));
+        const spend = parseFloat((row['Spend'] || row['spend'] || row['Cost'] || '0').toString().replace(/[₹,]/g, '')) || 0;
         const clicks = parseInt(row['Clicks'] || row['clicks'] || 0);
-        const orders = parseInt(row['7 Day Total Orders (#)'] || row['Orders'] || row['orders'] || 0);
-        const sales = parseFloat((row['7 Day Total Sales'] || row['Sales'] || row['sales'] || '0').toString().replace(/[₹,]/g, ''));
+        const impressions = parseInt((row['Impressions'] || row['impressions'] || '0').toString().replace(/,/g, '')) || 0;
+        const orders = parseInt(row['7 Day Total Orders (#)'] || row['7-day-total-orders'] || row['Orders'] || row['orders'] || 0);
+        const salesRaw = parseFloat((row['7 Day Total Sales'] || row['7-day-total-sales'] || row['Sales'] || row['sales'] || '0').toString().replace(/[₹,]/g, '')) || 0;
+        const date = row['Date'] || row['date'] || row['Start Date'] || row['start-date'] || '';
+
         const cpc = clicks > 0 ? Math.round(spend / clicks * 100) / 100 : 0;
         const cvr = clicks > 0 ? Math.round(orders / clicks * 10000) / 100 : 0;
-        const acos = sales > 0 ? Math.round(spend / sales * 100) : (orders > 0 ? Math.round(spend / (orders * 500) * 100) : 999);
-        allTerms.push({ keyword, campaign, matchType, spend, clicks, orders, sales, cpc, cvr, acos, words: keyword.split(/\s+/).length });
-        if (!campMap[keyword]) campMap[keyword] = [];
-        if (!campMap[keyword].includes(campaign)) campMap[keyword].push(campaign);
+        const ctr = impressions > 0 ? Math.round(clicks / impressions * 10000) / 100 : 0;
+
+        // Phase 2: Use per-ASIN AOV for ACoS estimation when sales column is empty
+        // This is materially more accurate than account-average for multi-product accounts
+        let sales = salesRaw;
+        if (sales === 0 && orders > 0) {
+            const aov = getAOV(asin);
+            sales = orders * aov;
+        }
+        const acos = sales > 0 ? Math.round(spend / sales * 100) : (spend > 0 && orders === 0 ? 999 : 0);
+        const adProfit = sales - spend;
+
+        allTerms.push({ keyword: searchTerm, targetedKw, campaign, adGroup, matchType, spend, clicks, orders, sales, cpc, cvr, ctr, acos, adProfit, words: searchTerm.split(/\s+/).length, date, impressions, asin });
+
+        // Ad-group-level cannibalization tracking
+        const campAGKey = campaign + '|||' + adGroup;
+        if (!campAdGroupMap[searchTerm]) campAdGroupMap[searchTerm] = [];
+        if (!campAdGroupMap[searchTerm].some(e => e.key === campAGKey)) {
+            campAdGroupMap[searchTerm].push({ key: campAGKey, campaign, adGroup, spend, orders, acos });
+        }
+
+        // Date-level tracking for trend detection
+        if (date) {
+            if (!dateMap[searchTerm]) dateMap[searchTerm] = [];
+            dateMap[searchTerm].push({ date, orders, spend, sales });
+        }
+
+        // Phase 2: targeted keyword → search terms mapping
+        if (targetedKw && targetedKw !== searchTerm) {
+            if (!kwTargetMap[targetedKw]) kwTargetMap[targetedKw] = { keyword: targetedKw, matchType, campaign, adGroup, searchTerms: [], spend: 0, orders: 0, sales: 0, clicks: 0 };
+            kwTargetMap[targetedKw].searchTerms.push({ term: searchTerm, spend, orders, sales, clicks, acos });
+            kwTargetMap[targetedKw].spend += spend;
+            kwTargetMap[targetedKw].orders += orders;
+            kwTargetMap[targetedKw].sales += sales;
+            kwTargetMap[targetedKw].clicks += clicks;
+        }
+
+        // Phase 2: campaign-level aggregation for budget efficiency
+        if (!campMap[campaign]) campMap[campaign] = { campaign, spend: 0, orders: 0, sales: 0, clicks: 0, impressions: 0, terms: 0 };
+        campMap[campaign].spend += spend;
+        campMap[campaign].orders += orders;
+        campMap[campaign].sales += sales;
+        campMap[campaign].clicks += clicks;
+        campMap[campaign].impressions += impressions;
+        campMap[campaign].terms++;
     });
 
-    const totalSpend = allTerms.reduce((s, t) => s + t.spend, 0);
-    const totalSales = allTerms.reduce((s, t) => s + t.sales, 0);
+    // ---- TREND DETECTION ----
+    function getTrend(keyword) {
+        const entries = dateMap[keyword];
+        if (!entries || entries.length < 4) return null;
+        const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
+        const mid = Math.floor(sorted.length / 2);
+        const firstHalf = sorted.slice(0, mid);
+        const secondHalf = sorted.slice(mid);
+        const o1 = firstHalf.reduce((s, e) => s + e.orders, 0);
+        const o2 = secondHalf.reduce((s, e) => s + e.orders, 0);
+        const s1 = firstHalf.reduce((s, e) => s + e.spend, 0);
+        const s2 = secondHalf.reduce((s, e) => s + e.spend, 0);
+        if (o1 === 0 && o2 === 0) return null;
+        const orderChange = o1 > 0 ? (o2 - o1) / o1 : null;
+        const spendChange = s1 > 0 ? (s2 - s1) / s1 : null;
+
+        // Phase 2: detect acceleration — split second half further
+        let accelerating = false;
+        if (secondHalf.length >= 4) {
+            const smid = Math.floor(secondHalf.length / 2);
+            const o2a = secondHalf.slice(0, smid).reduce((s, e) => s + e.orders, 0);
+            const o2b = secondHalf.slice(smid).reduce((s, e) => s + e.orders, 0);
+            if (o2a > 0 && (o2b - o2a) / o2a > 0.15) accelerating = true;
+        }
+
+        if (orderChange !== null && orderChange > 0.2) return { dir: 'rising', orderChange: Math.round(orderChange * 100), spendChange: spendChange ? Math.round(spendChange * 100) : null, accelerating };
+        if (orderChange !== null && orderChange < -0.2) return { dir: 'declining', orderChange: Math.round(Math.abs(orderChange) * 100), spendChange: spendChange ? Math.round(Math.abs(spendChange) * 100) : null, accelerating: false };
+        return { dir: 'stable', orderChange: 0, spendChange: null, accelerating: false };
+    }
+
+    // Aggregate terms by keyword
+    const kwAggMap = {};
+    allTerms.forEach(t => {
+        if (!kwAggMap[t.keyword]) {
+            kwAggMap[t.keyword] = { ...t, _count: 1 };
+        } else {
+            const e = kwAggMap[t.keyword];
+            e.spend += t.spend; e.clicks += t.clicks; e.orders += t.orders;
+            e.sales += t.sales; e.impressions += t.impressions; e._count++;
+            e.cpc = e.clicks > 0 ? Math.round(e.spend / e.clicks * 100) / 100 : 0;
+            e.cvr = e.clicks > 0 ? Math.round(e.orders / e.clicks * 10000) / 100 : 0;
+            e.ctr = e.impressions > 0 ? Math.round(e.clicks / e.impressions * 10000) / 100 : 0;
+            e.acos = e.sales > 0 ? Math.round(e.spend / e.sales * 100) : (e.orders === 0 ? 999 : 0);
+            e.adProfit = e.sales - e.spend;
+        }
+    });
+    const aggTerms = Object.values(kwAggMap).map(t => ({
+        ...t,
+        trend: getTrend(t.keyword)
+    }));
+
+    const totalSpend = aggTerms.reduce((s, t) => s + t.spend, 0);
+    const totalSales = aggTerms.reduce((s, t) => s + t.sales, 0);
+    const totalOrders = aggTerms.reduce((s, t) => s + t.orders, 0);
     const avgAcos = totalSales > 0 ? Math.round(totalSpend / totalSales * 100) : 0;
+    const avgCpc = aggTerms.filter(t => t.cpc > 0).length > 0
+        ? Math.round(aggTerms.filter(t => t.cpc > 0).reduce((s, t) => s + t.cpc, 0) / aggTerms.filter(t => t.cpc > 0).length * 100) / 100
+        : 0;
 
-    // SCALE: good ACoS, converting
-    const scale = allTerms.filter(t => t.orders >= 2 && t.acos <= 35 && t.acos > 0 && t.spend > 100)
-        .sort((a, b) => b.orders - a.orders).slice(0, 10)
-        .map(t => ({ ...t, matchNote: t.matchType === 'broad' ? 'Currently broad — also add as exact match' : t.matchType === 'auto' || t.campaign.toLowerCase().includes('auto') ? 'From auto-targeting — move to manual exact' : null }));
-    const scaleOpp = scale.reduce((s, k) => s + Math.round(k.orders * k.cpc * 4), 0);
+    // ---- SCALE: profitable, converting ----
+    const scale = aggTerms.filter(t => t.orders >= 2 && t.acos > 0 && t.acos <= 35 && t.spend > 100)
+        .sort((a, b) => b.adProfit - a.adProfit).slice(0, 10)
+        .map(t => ({
+            ...t,
+            matchNote: t.matchType === 'broad' ? 'Currently broad — also add as exact match'
+                : (t.matchType === 'auto' || t.campaign.toLowerCase().includes('auto')) ? 'From auto-targeting — move to manual exact'
+                : null,
+            trendNote: t.trend && t.trend.dir === 'rising'
+                ? `📈 Orders up ${t.trend.orderChange}%${t.trend.accelerating ? ' and accelerating' : ''} — scale fast`
+                : t.trend && t.trend.dir === 'declining'
+                ? `📉 Orders down ${t.trend.orderChange}% — investigate before scaling`
+                : null
+        }));
+    const scaleOpp = scale.reduce((s, k) => s + Math.round(k.adProfit * 0.3), 0);
 
-    // AUTO → MANUAL
-    const migrate = allTerms.filter(t => (t.matchType === 'broad' || t.matchType === 'auto' || t.campaign.toLowerCase().includes('auto')) && t.orders >= 2 && t.acos <= 40)
-        .sort((a, b) => b.orders - a.orders).slice(0, 8)
+    // ---- AUTO → MANUAL migration ----
+    const migrate = aggTerms.filter(t =>
+        (t.matchType === 'broad' || t.matchType === 'auto' || t.campaign.toLowerCase().includes('auto'))
+        && t.orders >= 2 && t.acos <= 40
+    ).sort((a, b) => b.orders - a.orders).slice(0, 8)
         .map(t => ({ ...t, sugBid: Math.round(t.cpc * 1.1 * 100) / 100 }));
 
-    // LONG-TAIL
-    const longTail = allTerms.filter(t => t.words >= 4 && t.clicks >= 3 && (t.orders > 0 || t.cpc < 15))
+    // ---- LONG-TAIL opportunities ----
+    const longTail = aggTerms.filter(t => t.words >= 4 && t.clicks >= 3 && (t.orders > 0 || t.cpc < 15))
         .sort((a, b) => b.orders - a.orders || a.acos - b.acos).slice(0, 10);
 
-    // DEAD
-    const dead = allTerms.filter(t => t.spend > 150 && t.clicks > 5 && (t.orders === 0 || t.acos > 100))
+    // ---- DEAD keywords ----
+    const dead = aggTerms.filter(t => t.spend > 150 && t.clicks > 5 && (t.orders === 0 || t.acos > 100))
         .sort((a, b) => b.spend - a.spend).slice(0, 15);
     const totalWaste = dead.reduce((s, k) => s + k.spend, 0);
 
-    // CANNIBALIZATION
-    const cannibal = Object.entries(campMap).filter(([, c]) => c.length > 1)
-        .map(([kw, camps]) => {
-            const terms = allTerms.filter(t => t.keyword === kw);
-            return { keyword: kw, camps, totalSpend: terms.reduce((s, t) => s + t.spend, 0), totalOrders: terms.reduce((s, t) => s + t.orders, 0) };
-        }).sort((a, b) => b.totalSpend - a.totalSpend).slice(0, 10);
+    // ---- RISING but under-bid ----
+    const underBid = aggTerms.filter(t =>
+        t.trend && t.trend.dir === 'rising' &&
+        t.orders >= 1 && t.acos > 0 && t.acos <= 40 &&
+        !scale.some(s => s.keyword === t.keyword)
+    ).sort((a, b) => b.trend.orderChange - a.trend.orderChange).slice(0, 5);
 
-    // CATEGORIES
+    // ---- DECLINING high-spend ----
+    const declining = aggTerms.filter(t =>
+        t.trend && t.trend.dir === 'declining' &&
+        t.spend > 200 && t.acos > 0
+    ).sort((a, b) => b.spend - a.spend).slice(0, 5);
+
+    // ---- AD-GROUP LEVEL CANNIBALIZATION ----
+    const cannibal = Object.entries(campAdGroupMap)
+        .filter(([, entries]) => entries.length > 1)
+        .map(([kw, entries]) => {
+            const sorted = [...entries].sort((a, b) => {
+                if (a.acos === 0 && b.acos === 0) return b.orders - a.orders;
+                if (a.acos === 0) return 1;
+                if (b.acos === 0) return -1;
+                return a.acos - b.acos;
+            });
+            const best = sorted[0];
+            const others = sorted.slice(1);
+            const totalSpendKw = entries.reduce((s, e) => s + e.spend, 0);
+            const totalOrdersKw = entries.reduce((s, e) => s + e.orders, 0);
+            const sameCampaign = entries.every(e => e.campaign === entries[0].campaign);
+            return { keyword: kw, entries, best, others, totalSpend: totalSpendKw, totalOrders: totalOrdersKw, sameCampaign, camps: [...new Set(entries.map(e => e.campaign))], adGroups: [...new Set(entries.map(e => e.adGroup).filter(Boolean))] };
+        })
+        .sort((a, b) => b.totalSpend - a.totalSpend).slice(0, 10);
+
+    // ---- CATEGORY BREAKDOWN ----
     const cats = { branded: { count: 0, spend: 0, orders: 0, sales: 0 }, competitor: { count: 0, spend: 0, orders: 0, sales: 0 }, generic: { count: 0, spend: 0, orders: 0, sales: 0 }, longtail: { count: 0, spend: 0, orders: 0, sales: 0 } };
     const compBrands = ['boat', 'noise', 'oneplus', 'realme', 'samsung', 'jbl', 'sony', 'bose', 'sennheiser', 'zebronics', 'portronics', 'mivi', 'ptron', 'fire-boltt', 'amazfit', 'xiaomi', 'mi', 'oppo', 'vivo', 'apple', 'marshall', 'harman', 'philips', 'skullcandy'];
-    // Guess brand from most common first word in converting terms
     const freqW = {};
-    allTerms.filter(t => t.orders > 0).forEach(t => { const w = t.keyword.split(' ')[0]; freqW[w] = (freqW[w] || 0) + 1; });
+    aggTerms.filter(t => t.orders > 0).forEach(t => { const w = t.keyword.split(' ')[0]; freqW[w] = (freqW[w] || 0) + 1; });
     const skipWords = ['wireless', 'bluetooth', 'best', 'for', 'with', 'the', 'buy', 'price', 'cheap', 'online', 'india', 'earbuds', 'earphone', 'speaker', 'watch', 'cable'];
     const brandGuess = Object.entries(freqW).filter(([w]) => !skipWords.includes(w)).sort((a, b) => b[1] - a[1])[0];
     const brand = brandGuess ? brandGuess[0] : null;
 
-    allTerms.forEach(t => {
+    aggTerms.forEach(t => {
         let cat = 'generic';
         if (brand && t.keyword.includes(brand)) cat = 'branded';
         else if (compBrands.some(b => t.keyword.includes(b))) cat = 'competitor';
@@ -1310,7 +1667,41 @@ function ppcParseReal() {
         cats[cat].count++; cats[cat].spend += t.spend; cats[cat].orders += t.orders; cats[cat].sales += t.sales;
     });
 
-    return { totalSpend, total: allTerms.length, avgAcos, scale, scaleOpp, migrate, longTail, dead, totalWaste, cannibal, cats };
+    // ---- PHASE 2: CAMPAIGN BUDGET EFFICIENCY ----
+    const campaigns = Object.values(campMap).map(c => ({
+        ...c,
+        acos: c.sales > 0 ? Math.round(c.spend / c.sales * 100) : (c.orders === 0 ? 999 : 0),
+        cpc: c.clicks > 0 ? Math.round(c.spend / c.clicks * 100) / 100 : 0,
+        cvr: c.clicks > 0 ? Math.round(c.orders / c.clicks * 10000) / 100 : 0,
+        ctr: c.impressions > 0 ? Math.round(c.clicks / c.impressions * 10000) / 100 : 0,
+        adProfit: c.sales - c.spend
+    })).sort((a, b) => b.spend - a.spend);
+
+    // ---- PHASE 2: BROAD MATCH BLEED ANALYSIS ----
+    // Keywords where the targeted keyword is broad/phrase and is generating high-waste search terms
+    const broadBleed = Object.values(kwTargetMap)
+        .filter(kw => (kw.matchType === 'broad' || kw.matchType === 'phrase') && kw.searchTerms.length > 2)
+        .map(kw => {
+            const wasteTerms = kw.searchTerms.filter(t => t.orders === 0 && t.spend > 50);
+            const totalWasteAmt = wasteTerms.reduce((s, t) => s + t.spend, 0);
+            const goodTerms = kw.searchTerms.filter(t => t.orders >= 1 && (t.spend > 0 ? t.acos <= 50 : true));
+            return { ...kw, wasteTerms, totalWasteAmt, goodTerms };
+        })
+        .filter(kw => kw.totalWasteAmt > 100)
+        .sort((a, b) => b.totalWasteAmt - a.totalWasteAmt).slice(0, 8);
+
+    const hasBizData = !!bizData;
+
+    return {
+        totalSpend, totalSales, totalOrders, total: aggTerms.length,
+        avgAcos, avgCpc, accountAOV, hasBizData, asinAOV,
+        scale, scaleOpp, migrate, longTail,
+        dead, totalWaste,
+        underBid, declining,
+        cannibal, cats,
+        campaigns,    // Phase 2: campaign-level budget efficiency
+        broadBleed    // Phase 2: broad match waste analysis
+    };
 }
 
 // ============================================
@@ -1319,13 +1710,21 @@ function ppcParseReal() {
 
 function ppcSampleData() {
     return {
-        totalSpend: 42500, total: 22, avgAcos: 28,
+        totalSpend: 42500, totalSales: 151750, totalOrders: 97, total: 22,
+        avgAcos: 28, avgCpc: 33.5, accountAOV: 1564, hasBizData: false,
         scale: [
-            { keyword: 'wireless earbuds with anc', spend: 4500, clicks: 120, orders: 18, sales: 26910, cpc: 37.5, cvr: 15.0, acos: 17, matchNote: null },
-            { keyword: 'tws earbuds bluetooth 5.3', spend: 2800, clicks: 85, orders: 12, sales: 17940, cpc: 32.9, cvr: 14.1, acos: 16, matchNote: 'Currently broad — also add as exact match' },
-            { keyword: 'noise cancelling earbuds india', spend: 3100, clicks: 95, orders: 14, sales: 20930, cpc: 32.6, cvr: 14.7, acos: 15, matchNote: null },
+            { keyword: 'wireless earbuds with anc', spend: 4500, clicks: 120, orders: 18, sales: 26910, cpc: 37.5, cvr: 15.0, ctr: 3.2, acos: 17, adProfit: 22410, matchNote: null, trend: { dir: 'rising', orderChange: 28, accelerating: true }, trendNote: '📈 Orders up 28% and accelerating — scale fast' },
+            { keyword: 'tws earbuds bluetooth 5.3', spend: 2800, clicks: 85, orders: 12, sales: 17940, cpc: 32.9, cvr: 14.1, ctr: 2.8, acos: 16, adProfit: 15140, matchNote: 'Currently broad — also add as exact match', trend: { dir: 'stable', orderChange: 0, accelerating: false }, trendNote: null },
+            { keyword: 'noise cancelling earbuds india', spend: 3100, clicks: 95, orders: 14, sales: 20930, cpc: 32.6, cvr: 14.7, ctr: 3.0, acos: 15, adProfit: 17830, matchNote: null, trend: { dir: 'stable', orderChange: 0, accelerating: false }, trendNote: null },
         ],
         scaleOpp: 8500,
+        underBid: [
+            { keyword: 'earbuds with long battery life', spend: 800, clicks: 28, orders: 4, acos: 22, cpc: 28.5, cvr: 14.2, trend: { dir: 'rising', orderChange: 45, accelerating: false } },
+            { keyword: 'tws earphone for workout', spend: 650, clicks: 22, orders: 3, acos: 19, cpc: 29.5, cvr: 13.6, trend: { dir: 'rising', orderChange: 33, accelerating: false } },
+        ],
+        declining: [
+            { keyword: 'bluetooth earphone buy online', spend: 3200, clicks: 95, orders: 6, acos: 58, cpc: 33.7, cvr: 6.3, trend: { dir: 'declining', orderChange: 35, accelerating: false } },
+        ],
         migrate: [
             { keyword: 'anc earbuds under 2000', orders: 8, acos: 18, sugBid: 28.0 },
             { keyword: 'best tws earbuds india 2026', orders: 5, acos: 21, sugBid: 24.5 },
@@ -1347,14 +1746,56 @@ function ppcSampleData() {
         ],
         totalWaste: 11250,
         cannibal: [
-            { keyword: 'wireless earbuds', camps: ['Earbuds-Auto', 'Earbuds-Broad', 'Earbuds-Exact'], totalSpend: 5800, totalOrders: 12 },
+            {
+                keyword: 'wireless earbuds',
+                camps: ['Earbuds-Auto', 'Earbuds-Broad'],
+                adGroups: ['Earbuds-Auto-AG1', 'Earbuds-Broad-AG1'],
+                totalSpend: 5800, totalOrders: 12, sameCampaign: false,
+                best: { campaign: 'Earbuds-Exact', adGroup: 'Earbuds-Exact-AG1', acos: 19, orders: 8, spend: 2100 },
+                others: [{ campaign: 'Earbuds-Auto', adGroup: 'Earbuds-Auto-AG1', acos: 38, orders: 3, spend: 2200 }, { campaign: 'Earbuds-Broad', adGroup: '', acos: 44, orders: 1, spend: 1500 }]
+            },
         ],
         cats: {
             branded: { count: 2, spend: 1200, orders: 8, sales: 12000 },
             competitor: { count: 3, spend: 4500, orders: 2, sales: 3000 },
             generic: { count: 10, spend: 22000, orders: 18, sales: 27000 },
             longtail: { count: 7, spend: 14800, orders: 16, sales: 24000 }
-        }
+        },
+        // Phase 2: campaign budget efficiency
+        campaigns: [
+            { campaign: 'Earbuds-Exact-Match', spend: 14200, orders: 48, sales: 71760, clicks: 380, impressions: 12000, terms: 8, acos: 20, cpc: 37.4, cvr: 12.6, ctr: 3.2, adProfit: 57560 },
+            { campaign: 'Earbuds-Auto', spend: 12800, orders: 22, sales: 32780, clicks: 390, impressions: 28000, terms: 7, acos: 39, cpc: 32.8, cvr: 5.6, ctr: 1.4, adProfit: 19980 },
+            { campaign: 'Earbuds-Broad', spend: 8900, orders: 14, sales: 20930, clicks: 268, impressions: 19500, terms: 5, acos: 43, cpc: 33.2, cvr: 5.2, ctr: 1.4, adProfit: 12030 },
+            { campaign: 'Competitor-Targeting', spend: 4500, orders: 2, sales: 2980, clicks: 138, impressions: 9800, terms: 2, acos: 151, cpc: 32.6, cvr: 1.4, ctr: 1.4, adProfit: -1520 },
+            { campaign: 'Sponsored-Display-R', spend: 2100, orders: 11, sales: 16420, clicks: 95, impressions: 48000, terms: 0, acos: 13, cpc: 22.1, cvr: 11.6, ctr: 0.2, adProfit: 14320 },
+        ],
+        // Phase 2: broad match bleed
+        broadBleed: [
+            {
+                keyword: 'bluetooth earbuds',
+                matchType: 'broad',
+                campaign: 'Earbuds-Broad',
+                adGroup: 'All-Products',
+                spend: 8900,
+                orders: 14,
+                sales: 20930,
+                clicks: 268,
+                totalWasteAmt: 3200,
+                goodTerms: [
+                    { term: 'bluetooth earbuds under 2000', spend: 2400, orders: 8, acos: 19 },
+                    { term: 'tws bluetooth earbuds india', spend: 1800, orders: 5, acos: 22 },
+                ],
+                wasteTerms: [
+                    { term: 'bluetooth headphone sony', spend: 850, orders: 0, acos: 999 },
+                    { term: 'bluetooth speaker outdoor', spend: 720, orders: 0, acos: 999 },
+                    { term: 'wireless neckband earphone', spend: 680, orders: 0, acos: 999 },
+                    { term: 'boAt earphones price', spend: 430, orders: 0, acos: 999 },
+                    { term: 'earphone wired type c', spend: 290, orders: 0, acos: 999 },
+                    { term: 'soundbar bluetooth 2.1', spend: 230, orders: 0, acos: 999 },
+                ],
+                searchTerms: []
+            }
+        ]
     };
 }
 
@@ -1368,37 +1809,104 @@ function analyzeBusinessReports() {
 
     let products;
     if (hasRealData) {
-        products = bizFile.rows.map(row => {
-            const asin = row['(Child) ASIN'] || row['ASIN'] || row['asin'] || '';
-            const name = row['Title'] || row['(Child) ASIN'] || asin;
-            const sessions = parseInt((row['Sessions'] || row['sessions'] || '0').toString().replace(/,/g, ''));
-            const units = parseInt((row['Units Ordered'] || row['units-ordered'] || row['Units'] || '0').toString().replace(/,/g, ''));
-            const sales = parseFloat((row['Ordered Product Sales'] || row['ordered-product-sales'] || '0').toString().replace(/[₹,]/g, ''));
-            const convStr = (row['Unit Session Percentage'] || row['Buy Box Percentage'] || '0').toString().replace('%', '');
-            const conversion = parseFloat(convStr) || (sessions > 0 ? Math.round(units / sessions * 10000) / 100 : 0);
-            const pageViews = parseInt((row['Page Views'] || row['pageviews'] || '0').toString().replace(/,/g, '')) || sessions;
-            return { asin, name, sales, units, sessions, conversion, pageViews };
-        }).filter(p => p.asin && (p.units > 0 || p.sessions > 0));
+        // Try to detect if report has multiple date rows per ASIN (date-granular) or is already aggregated
+        const allRows = bizFile.rows;
+
+        // Check if there's a date column — if so, we can compute trends per product
+        const sampleRow = allRows[0] || {};
+        const hasDateCol = !!(sampleRow['Date'] || sampleRow['date'] || sampleRow['Start Date'] || sampleRow['start-date']);
+
+        if (hasDateCol) {
+            // Group rows by ASIN across dates for trend computation
+            const asinDateMap = {};
+            allRows.forEach(row => {
+                const asin = row['(Child) ASIN'] || row['ASIN'] || row['asin'] || '';
+                const date = row['Date'] || row['date'] || row['Start Date'] || row['start-date'] || '';
+                if (!asin) return;
+                const units = parseInt((row['Units Ordered'] || row['units-ordered'] || row['Units'] || '0').toString().replace(/,/g, '')) || 0;
+                const sales = parseFloat((row['Ordered Product Sales'] || row['ordered-product-sales'] || '0').toString().replace(/[₹,]/g, '')) || 0;
+                const sessions = parseInt((row['Sessions'] || row['sessions'] || '0').toString().replace(/,/g, '')) || 0;
+
+                if (!asinDateMap[asin]) asinDateMap[asin] = { rows: [], name: row['Title'] || row['(Child) ASIN'] || asin };
+                asinDateMap[asin].rows.push({ date, units, sales, sessions });
+            });
+
+            products = Object.entries(asinDateMap).map(([asin, data]) => {
+                const sorted = data.rows.sort((a, b) => a.date.localeCompare(b.date));
+                const totalUnits = sorted.reduce((s, r) => s + r.units, 0);
+                const totalSales = sorted.reduce((s, r) => s + r.sales, 0);
+                const totalSessions = sorted.reduce((s, r) => s + r.sessions, 0);
+                const convStr = totalSessions > 0 ? Math.round(totalUnits / totalSessions * 10000) / 100 : 0;
+
+                // Trend: compare first half vs second half of date range
+                let trend = null;
+                if (sorted.length >= 4) {
+                    const mid = Math.floor(sorted.length / 2);
+                    const u1 = sorted.slice(0, mid).reduce((s, r) => s + r.units, 0);
+                    const u2 = sorted.slice(mid).reduce((s, r) => s + r.units, 0);
+                    const s1 = sorted.slice(0, mid).reduce((s, r) => s + r.sales, 0);
+                    const s2 = sorted.slice(mid).reduce((s, r) => s + r.sales, 0);
+                    if (u1 > 0) {
+                        const change = (u2 - u1) / u1;
+                        if (change > 0.15) trend = { dir: 'rising', pct: Math.round(change * 100), revenueChange: s1 > 0 ? Math.round((s2 - s1) / s1 * 100) : null };
+                        else if (change < -0.15) trend = { dir: 'declining', pct: Math.round(Math.abs(change) * 100), revenueChange: s1 > 0 ? Math.round(Math.abs((s2 - s1) / s1) * 100) : null };
+                        else trend = { dir: 'stable', pct: 0 };
+                    }
+                }
+
+                return { asin, name: data.name, sales: totalSales, units: totalUnits, sessions: totalSessions, conversion: convStr, trend };
+            }).filter(p => p.asin && (p.units > 0 || p.sessions > 0));
+
+        } else {
+            // No date column — single aggregate per ASIN, no trend possible
+            products = allRows.map(row => {
+                const asin = row['(Child) ASIN'] || row['ASIN'] || row['asin'] || '';
+                const name = row['Title'] || row['(Child) ASIN'] || asin;
+                const sessions = parseInt((row['Sessions'] || row['sessions'] || '0').toString().replace(/,/g, ''));
+                const units = parseInt((row['Units Ordered'] || row['units-ordered'] || row['Units'] || '0').toString().replace(/,/g, ''));
+                const sales = parseFloat((row['Ordered Product Sales'] || row['ordered-product-sales'] || '0').toString().replace(/[₹,]/g, ''));
+                const convStr = (row['Unit Session Percentage'] || row['unit-session-percentage'] || '0').toString().replace('%', '');
+                const buyBoxPct = parseFloat((row['Buy Box Percentage'] || row['buy-box-percentage'] || '0').toString().replace('%', '')) || null;
+                const pageViews = parseInt((row['Page Views'] || row['page-views'] || '0').toString().replace(/,/g, '')) || sessions;
+                const conversion = parseFloat(convStr) || (sessions > 0 ? Math.round(units / sessions * 10000) / 100 : 0);
+                return { asin, name, sales, units, sessions, pageViews, conversion, buyBoxPct, trend: null };
+            }).filter(p => p.asin && (p.units > 0 || p.sessions > 0));
+        }
     }
 
     if (!products || products.length === 0) {
         products = [
-            { asin: 'B08XYZ123', name: 'Wireless Earbuds Pro', sales: 85000, units: 121, sessions: 4200, conversion: 2.9, pageViews: 5100 },
-            { asin: 'B09ABC456', name: 'Smart Watch Band', sales: 120000, units: 200, sessions: 6100, conversion: 3.3, pageViews: 7500 },
-            { asin: 'B07DEF789', name: 'USB-C Hub Adapter', sales: 42000, units: 280, sessions: 8900, conversion: 3.1, pageViews: 10200 },
-            { asin: 'B10GHI012', name: 'Phone Stand Adjustable', sales: 28000, units: 400, sessions: 12000, conversion: 3.3, pageViews: 14000 },
+            { asin: 'B08XYZ123', name: 'Wireless Earbuds Pro', sales: 85000, units: 121, sessions: 4200, pageViews: 5100, conversion: 2.9, buyBoxPct: 96, trend: { dir: 'rising', pct: 32, revenueChange: 29 } },
+            { asin: 'B09ABC456', name: 'Smart Watch Band', sales: 120000, units: 200, sessions: 6100, pageViews: 7500, conversion: 3.3, buyBoxPct: 88, trend: { dir: 'declining', pct: 18, revenueChange: 15 } },
+            { asin: 'B07DEF789', name: 'USB-C Hub Adapter', sales: 42000, units: 280, sessions: 8900, pageViews: 10200, conversion: 1.4, buyBoxPct: 61, trend: { dir: 'stable', pct: 0 } },
+            { asin: 'B10GHI012', name: 'Phone Stand Adjustable', sales: 28000, units: 400, sessions: 12000, pageViews: 14000, conversion: 3.3, buyBoxPct: 99, trend: { dir: 'declining', pct: 24, revenueChange: 21 } },
         ];
     }
 
-    // Add derived fields
+    // Add derived fields + Phase 2: velocity acceleration for restock
     products.forEach(p => {
         p.aov = p.units > 0 ? Math.round(p.sales / p.units) : 0;
         p.dailySales = Math.round(p.units / 30 * 10) / 10;
+        // Phase 2: detect acceleration in trend (is growth itself speeding up?)
+        if (p.trend && p.trend.dir === 'rising' && p.trend.pct > 30) {
+            p.trend.accelerating = true;
+        }
     });
 
     const totalSales = products.reduce((s, p) => s + p.sales, 0);
     const totalUnits = products.reduce((s, p) => s + p.units, 0);
     const avgConversion = products.length > 0 ? Math.round(products.reduce((s, p) => s + p.conversion, 0) / products.length * 10) / 10 : 0;
+
+    // ---- REVENUE CONCENTRATION ANALYSIS ----
+    const sortedByRevenue = [...products].sort((a, b) => b.sales - a.sales);
+    const top1Pct = totalSales > 0 ? Math.round(sortedByRevenue[0].sales / totalSales * 100) : 0;
+    const top2Sales = sortedByRevenue.slice(0, 2).reduce((s, p) => s + p.sales, 0);
+    const top2Pct = totalSales > 0 ? Math.round(top2Sales / totalSales * 100) : 0;
+    const concentrationRisk = top1Pct >= 60 ? 'critical' : top1Pct >= 40 || top2Pct >= 75 ? 'high' : top2Pct >= 55 ? 'medium' : 'low';
+
+    // ---- TREND SUMMARY ----
+    const risingProducts = products.filter(p => p.trend && p.trend.dir === 'rising');
+    const decliningProducts = products.filter(p => p.trend && p.trend.dir === 'declining');
 
     // ---- SEASONAL EVENT CALENDAR ----
     const today = new Date();
@@ -1410,17 +1918,14 @@ function analyzeBusinessReports() {
         { name: 'Great Indian Festival (Diwali)', start: new Date(today.getFullYear(), 9, 5), end: new Date(today.getFullYear(), 9, 15), multiplier: 3.5 },
         { name: 'Black Friday / Cyber Monday', start: new Date(today.getFullYear(), 10, 24), end: new Date(today.getFullYear(), 10, 30), multiplier: 1.5 },
         { name: 'Year-End Sale', start: new Date(today.getFullYear(), 11, 20), end: new Date(today.getFullYear(), 11, 31), multiplier: 1.6 },
-        // Next year events if within 90 days
         { name: 'Republic Day Sale', start: new Date(today.getFullYear() + 1, 0, 20), end: new Date(today.getFullYear() + 1, 0, 26), multiplier: 1.8 },
     ];
-
     const upcomingEvents = events.filter(e => {
         const daysUntil = Math.round((e.start - today) / (1000 * 60 * 60 * 24));
         return daysUntil > -5 && daysUntil <= 90;
     }).map(e => {
         const daysUntil = Math.round((e.start - today) / (1000 * 60 * 60 * 24));
-        const shipByDate = new Date(e.start.getTime() - 21 * 24 * 60 * 60 * 1000); // 3 weeks before
-        return { ...e, daysUntil, shipBy: shipByDate };
+        return { ...e, daysUntil, shipBy: new Date(e.start.getTime() - 21 * 24 * 60 * 60 * 1000) };
     });
 
     let html = `
@@ -1428,66 +1933,183 @@ function analyzeBusinessReports() {
             <h2>Business reports analysis</h2>
             <div class="big-number">₹${totalSales.toLocaleString('en-IN')}</div>
             <p class="results-meta">Total sales across ${products.length} active products</p>
-            <div class="results-meta"><span>${totalUnits.toLocaleString('en-IN')} units sold</span> · <span>Avg. conversion: ${avgConversion}%</span> · <span>Avg. order: ₹${Math.round(totalSales / Math.max(totalUnits, 1)).toLocaleString('en-IN')}</span></div>
+            <div class="results-meta">
+                <span>${totalUnits.toLocaleString('en-IN')} units sold</span> ·
+                <span>Avg. conversion: ${avgConversion}%</span> ·
+                <span>Avg. order: ₹${Math.round(totalSales / Math.max(totalUnits, 1)).toLocaleString('en-IN')}</span>
+                ${risingProducts.length > 0 ? ' · <span style="color:#15803d;font-weight:600;">📈 ' + risingProducts.length + ' growing</span>' : ''}
+                ${decliningProducts.length > 0 ? ' · <span style="color:#dc2626;font-weight:600;">📉 ' + decliningProducts.length + ' declining</span>' : ''}
+            </div>
             ${!hasRealData ? '<p style="font-size:13px; color:var(--gold); margin-top:12px;">Showing sample data — upload your Business Report for real numbers</p>' : ''}
         </div>
     `;
 
-    // ---- CARD 1: SEASONAL INVENTORY ALERT ----
+    // ---- CARD 0: REVENUE CONCENTRATION RISK ----
+    if (concentrationRisk !== 'low' && products.length > 1) {
+        const riskColor = concentrationRisk === 'critical' ? '#dc2626' : concentrationRisk === 'high' ? '#c2410c' : '#d97706';
+        const riskBg = concentrationRisk === 'critical' ? '#fef2f2' : concentrationRisk === 'high' ? '#fff7ed' : '#fffbeb';
+        html += `<div class="case-card" style="border-left:4px solid ${riskColor};">
+            <div class="case-header" onclick="this.nextElementSibling.classList.toggle('open')">
+                <div class="case-header-left">
+                    <span class="case-priority" style="background:${riskBg};color:${riskColor};">RISK</span>
+                    <span class="case-title">Revenue concentration — ${top1Pct}% of sales from 1 product</span>
+                </div>
+                <span class="case-amount">${concentrationRisk === 'critical' ? 'Critical' : concentrationRisk === 'high' ? 'High risk' : 'Moderate'}</span>
+            </div>
+            <div class="case-body open">
+                <div class="case-section">
+                    <h4>Why this matters</h4>
+                    <p>${sortedByRevenue[0].name.substring(0, 50)} generates ${top1Pct}% of your total revenue${products.length >= 2 ? '. Your top 2 products together account for ' + top2Pct + '%.' : '.'} This is a structural business risk — if that product gets suppressed, receives negative reviews, or loses the Buy Box, your revenue drops ${top1Pct}% overnight.</p>
+                    <p style="margin-top:8px;">Amazon.in sellers with this profile are highly vulnerable to: listing suppression, review attacks, inventory stockouts, and competitor undercutting on a single ASIN.</p>
+                </div>
+                <div class="case-section">
+                    <h4>Revenue breakdown</h4>
+                    ${sortedByRevenue.slice(0, 5).map((p, i) => {
+                        const pct = totalSales > 0 ? Math.round(p.sales / totalSales * 100) : 0;
+                        const barColor = i === 0 ? riskColor : i === 1 ? '#f59e0b' : '#6b7280';
+                        return `<div style="padding:8px 0;border-bottom:1px solid var(--border);">
+                            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                                <span style="font-size:13px;font-weight:600;">${p.name.length > 40 ? p.name.substring(0, 37) + '...' : p.name}</span>
+                                <span style="font-size:13px;font-weight:700;color:${barColor};">${pct}%</span>
+                            </div>
+                            <div style="background:var(--border);height:5px;border-radius:3px;">
+                                <div style="background:${barColor};height:5px;border-radius:3px;width:${pct}%;"></div>
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>
+                <div class="case-section">
+                    <h4>What to do</h4>
+                    <p>Diversification is a medium-term fix, not an overnight one. Priority actions:</p>
+                    <ol>
+                        <li>Identify 2-3 complementary products in the same category — add them to your catalog this quarter</li>
+                        <li>For your top product: ensure you have at least 90 days of safety stock at all times</li>
+                        <li>Register your brand via Amazon Brand Registry if not already done — this gives you better listing protection</li>
+                        <li>Monitor your top product's BSR and review count weekly via the Business Reports</li>
+                    </ol>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    // ---- CARD 1: SALES TREND ALERT ----
+    const trendableProducts = products.filter(p => p.trend && p.trend.dir !== null);
+    if (trendableProducts.length > 0 && (risingProducts.length > 0 || decliningProducts.length > 0)) {
+        html += `<div class="case-card">
+            <div class="case-header" onclick="this.nextElementSibling.classList.toggle('open')">
+                <div class="case-header-left">
+                    <span class="case-priority" style="background:#eff6ff;color:#1d4ed8;">TRENDS</span>
+                    <span class="case-title">Sales velocity trends — products gaining and losing momentum</span>
+                </div>
+                <span class="case-amount">${risingProducts.length} up · ${decliningProducts.length} down</span>
+            </div>
+            <div class="case-body open">`;
+
+        if (risingProducts.length > 0) {
+            html += `<div class="case-section">
+                <h4>📈 Rising products — capitalize now</h4>
+                <p>These products showed 15%+ order growth in the second half of your date range. Act while momentum is with you.</p>`;
+            risingProducts.sort((a, b) => b.trend.pct - a.trend.pct).forEach(p => {
+                html += `<div style="padding:10px 0;border-bottom:1px solid var(--border);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
+                        <strong>${p.name.length > 45 ? p.name.substring(0,42) + '...' : p.name}</strong>
+                        <span style="background:#dcfce7;color:#15803d;font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;">📈 +${p.trend.pct}% orders${p.trend.revenueChange ? ' · +' + p.trend.revenueChange + '% revenue' : ''}</span>
+                    </div>
+                    <p style="font-size:13px;color:var(--text-mid);margin-top:4px;">${p.asin} · ₹${p.sales.toLocaleString('en-IN')} · ${p.units} units · ${p.conversion}% CVR</p>
+                    <p style="font-size:13px;margin-top:4px;color:#15803d;"><strong>→ Increase PPC bids now, ensure 60+ days of stock, consider a price test (+₹50-100)</strong></p>
+                </div>`;
+            });
+            html += `</div>`;
+        }
+
+        if (decliningProducts.length > 0) {
+            html += `<div class="case-section">
+                <h4>📉 Declining products — investigate urgently</h4>
+                <p>These products lost 15%+ of order volume in the second half of your date range. Declining velocity compounds — fix the root cause before it accelerates.</p>`;
+            decliningProducts.sort((a, b) => b.trend.pct - a.trend.pct).forEach(p => {
+                html += `<div style="padding:10px 0;border-bottom:1px solid var(--border);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
+                        <strong>${p.name.length > 45 ? p.name.substring(0,42) + '...' : p.name}</strong>
+                        <span style="background:#fef2f2;color:#dc2626;font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;">📉 -${p.trend.pct}% orders${p.trend.revenueChange ? ' · -' + p.trend.revenueChange + '% revenue' : ''}</span>
+                    </div>
+                    <p style="font-size:13px;color:var(--text-mid);margin-top:4px;">${p.asin} · ₹${p.sales.toLocaleString('en-IN')} · ${p.units} units · ${p.conversion}% CVR</p>
+                    <div style="font-size:13px;margin-top:6px;background:var(--bg);border-radius:8px;padding:10px 12px;">
+                        <strong>Diagnose this decline:</strong>
+                        <ul style="margin:6px 0 0;padding-left:18px;line-height:1.8;">
+                            <li>Check your BSR chart — did rank start dropping on a specific date? (competitor launch?)</li>
+                            <li>Review recent customer feedback and Q&amp;A — new complaints about quality or compatibility?</li>
+                            <li>Compare your price vs top 3 competitors — were you undercut?</li>
+                            <li>Check if your listing was suppressed or had an image removed</li>
+                            <li>Review your ad spend — was PPC paused or budget reduced in that period?</li>
+                        </ul>
+                    </div>
+                </div>`;
+            });
+            html += `</div>`;
+        }
+        html += `</div></div>`;
+    }
+
+    // ---- CARD 2: SEASONAL INVENTORY ALERT ----
     if (upcomingEvents.length > 0) {
         html += `<div class="case-card"><div class="case-header" onclick="document.getElementById('seasonAlert').classList.toggle('open')">
             <div class="case-header-left"><span class="case-priority" style="background:#fef2f2;color:#dc2626;">UPCOMING SALE</span><span class="case-title">Stock up — Amazon sale event ahead</span></div>
             <span class="case-amount">${upcomingEvents.length} event${upcomingEvents.length > 1 ? 's' : ''}</span>
         </div><div class="case-body open" id="seasonAlert">`;
-
         upcomingEvents.forEach(evt => {
             const shipByStr = evt.shipBy.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
             const startStr = evt.start.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
             const urgent = evt.daysUntil <= 21;
-
             html += `<div class="case-section">
                 <h4>${urgent ? '🔴' : '🟡'} ${evt.name} — ${evt.daysUntil <= 0 ? 'HAPPENING NOW' : 'in ' + evt.daysUntil + ' days'} (starts ${startStr})</h4>
                 <p>Expected demand: <strong>${evt.multiplier}× normal sales velocity</strong>. ${urgent ? 'Ship inventory NOW to arrive in time.' : 'Ship by <strong>' + shipByStr + '</strong> to have stock in FBA warehouses.'}</p>
                 <p style="margin-top:8px;font-size:13px;"><strong>Recommended stock for this event:</strong></p>`;
-
             products.forEach(p => {
                 const eventDays = Math.round((evt.end - evt.start) / (1000 * 60 * 60 * 24)) + 1;
                 const normalUnits = Math.round(p.dailySales * eventDays);
                 const saleUnits = Math.round(normalUnits * evt.multiplier);
-                html += `<p style="font-size:13px;color:var(--text-mid);margin-left:16px;">${p.asin}: <strong>${saleUnits} units</strong> (vs. ${normalUnits} on normal days) — ${p.name.length > 35 ? p.name.substring(0, 32) + '...' : p.name}</p>`;
+                // Adjust for trend — rising products need more stock
+                const trendNote = p.trend && p.trend.dir === 'rising' ? ` (add ${Math.round(saleUnits * p.trend.pct / 100)} extra — product is growing)` : '';
+                html += `<p style="font-size:13px;color:var(--text-mid);margin-left:16px;">${p.asin}: <strong>${saleUnits} units</strong> (vs. ${normalUnits} normal)${trendNote} — ${p.name.length > 35 ? p.name.substring(0, 32) + '...' : p.name}</p>`;
             });
             html += `</div>`;
         });
         html += `</div></div>`;
     }
 
-    // ---- CARD 2: INVENTORY PLANNING ----
+    // ---- CARD 3: INVENTORY PLANNING ----
     html += `<div class="case-card"><div class="case-header" onclick="document.getElementById('invPlan').classList.toggle('open')">
         <div class="case-header-left"><span class="case-priority" style="background:#eff6ff;color:#1d4ed8;">RESTOCK</span><span class="case-title">Inventory restock recommendations</span></div>
         <span class="case-amount">${products.length} products</span>
     </div><div class="case-body open" id="invPlan">
         <div class="case-section"><h4>Restock quantities by coverage period</h4>
-            <p>Based on your current sales velocity (units/day from last 30 days).</p></div>
+            <p>Based on current sales velocity. Quantities adjusted for trend direction where date data is available.</p></div>
         <div class="case-section">`;
-
     products.sort((a, b) => b.dailySales - a.dailySales).forEach(p => {
-        const weeks4 = Math.round(p.dailySales * 28);
-        const weeks8 = Math.round(p.dailySales * 56);
-        const weeks12 = Math.round(p.dailySales * 84);
-
-        // Adjust for upcoming event if within 8 weeks
+        // Trend-adjusted daily sales for restock planning
+        const trendMultiplier = p.trend && p.trend.dir === 'rising' ? 1 + (p.trend.pct / 200) // half the recent growth rate as projection
+            : p.trend && p.trend.dir === 'declining' ? Math.max(0.7, 1 - (p.trend.pct / 300)) // don't under-order too aggressively
+            : 1;
+        const adjDaily = Math.round(p.dailySales * trendMultiplier * 10) / 10;
+        const weeks4 = Math.round(adjDaily * 28);
+        const weeks8 = Math.round(adjDaily * 56);
+        const weeks12 = Math.round(adjDaily * 84);
         const nextEvent = upcomingEvents.find(e => e.daysUntil > 0 && e.daysUntil <= 56);
         let eventNote = '';
         if (nextEvent) {
             const eventDays = Math.round((nextEvent.end - nextEvent.start) / (1000 * 60 * 60 * 24)) + 1;
-            const extraUnits = Math.round(p.dailySales * eventDays * (nextEvent.multiplier - 1));
+            const extraUnits = Math.round(adjDaily * eventDays * (nextEvent.multiplier - 1));
             eventNote = `+${extraUnits} extra for ${nextEvent.name}`;
         }
-
+        const trendLabel = p.trend && p.trend.dir === 'rising'
+            ? `<span style="font-size:11px;background:#dcfce7;color:#15803d;padding:1px 6px;border-radius:3px;margin-left:6px;">📈 trending up — quantities adjusted</span>`
+            : p.trend && p.trend.dir === 'declining'
+            ? `<span style="font-size:11px;background:#fef2f2;color:#dc2626;padding:1px 6px;border-radius:3px;margin-left:6px;">📉 trending down — investigate before over-ordering</span>`
+            : '';
         html += `<div style="padding:12px 0;border-bottom:1px solid var(--border);">
-            <div style="display:flex;justify-content:space-between;">
-                <div><strong>${p.name.length > 40 ? p.name.substring(0, 37) + '...' : p.name}</strong><br>
-                <span style="font-size:12px;color:var(--text-mid);">${p.asin} · ${p.dailySales} units/day · ₹${p.aov}/unit</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:4px;">
+                <div><strong>${p.name.length > 40 ? p.name.substring(0, 37) + '...' : p.name}</strong>${trendLabel}<br>
+                <span style="font-size:12px;color:var(--text-mid);">${p.asin} · ${adjDaily} units/day${adjDaily !== p.dailySales ? ' (adj. from ' + p.dailySales + ')' : ''} · ₹${p.aov}/unit</span></div>
             </div>
             <div style="display:flex;gap:16px;margin-top:8px;">
                 <div style="flex:1;background:var(--card);padding:8px;border-radius:6px;text-align:center;border:1px solid var(--border);">
@@ -1508,19 +2130,23 @@ function analyzeBusinessReports() {
     });
     html += `</div></div></div>`;
 
-    // ---- CARD 3: PRODUCT PERFORMANCE RANKINGS ----
+    // ---- CARD 4: PRODUCT PERFORMANCE RANKINGS ----
     html += `<div class="case-card"><div class="case-header" onclick="document.getElementById('topProds').classList.toggle('open')">
         <div class="case-header-left"><span class="case-priority" style="background:#f0fdf4;color:#15803d;">RANKINGS</span><span class="case-title">Product performance</span></div>
         <span class="case-amount">${products.length} products</span>
     </div><div class="case-body open" id="topProds">
         <div class="case-section">`;
-
     [...products].sort((a, b) => b.sales - a.sales).forEach((p, i) => {
         const convColor = p.conversion >= 3 ? 'var(--green)' : p.conversion >= 1.5 ? '#b45309' : '#dc2626';
+        const trendBadge = p.trend && p.trend.dir === 'rising'
+            ? `<span style="font-size:11px;background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:3px;margin-left:6px;">📈 +${p.trend.pct}%</span>`
+            : p.trend && p.trend.dir === 'declining'
+            ? `<span style="font-size:11px;background:#fef2f2;color:#dc2626;padding:2px 7px;border-radius:3px;margin-left:6px;">📉 -${p.trend.pct}%</span>`
+            : '';
         html += `<div style="padding:12px 0;border-bottom:1px solid var(--border);">
             <div style="display:flex;justify-content:space-between;align-items:start;">
                 <div>
-                    <strong>#${i + 1}: ${p.name.length > 45 ? p.name.substring(0, 42) + '...' : p.name}</strong>
+                    <strong>#${i + 1}: ${p.name.length > 45 ? p.name.substring(0, 42) + '...' : p.name}</strong>${trendBadge}
                     <span style="font-size:11px;color:var(--text-mid);margin-left:8px;">${p.asin}</span>
                 </div>
                 <span style="font-weight:700;">₹${p.sales.toLocaleString('en-IN')}</span>
@@ -1528,13 +2154,13 @@ function analyzeBusinessReports() {
             <p style="font-size:13px;color:var(--text-mid);margin-top:4px;">
                 ${p.units} units · ${p.sessions.toLocaleString('en-IN')} sessions ·
                 Conversion: <span style="color:${convColor};font-weight:600;">${p.conversion}%</span>
-                ${p.conversion < 1.5 ? ' — <em>low conversion, check listing quality and pricing</em>' : ''}
+                ${p.conversion < 1.5 ? ' — <em>low conversion, check listing quality</em>' : ''}
             </p>
         </div>`;
     });
     html += `</div></div></div>`;
 
-    // ---- CARD 4: LOW CONVERSION ALERT ----
+    // ---- CARD 5: LOW CONVERSION ALERT ----
     const lowConv = products.filter(p => p.conversion < 2 && p.sessions > 50);
     if (lowConv.length > 0) {
         html += `<div class="case-card"><div class="case-header" onclick="document.getElementById('lowConv').classList.toggle('open')">
@@ -1551,6 +2177,95 @@ function analyzeBusinessReports() {
             </div>`;
         });
         html += `</div></div></div>`;
+    }
+
+    // ---- CARD 6 (Phase 2): SESSION → BUY BOX → CONVERSION FUNNEL ----
+    // Diagnose whether low performance is a traffic problem, a buy box problem, or a listing problem
+    const funnelProds = products.filter(p => p.sessions > 30);
+    if (funnelProds.length > 0) {
+        // Classify each product by its bottleneck
+        const trafficProb = funnelProds.filter(p => p.sessions < 200 && p.conversion >= 2);
+        const buyBoxProb = funnelProds.filter(p => p.buyBoxPct !== null && p.buyBoxPct < 80 && p.sessions >= 200);
+        const listingProb = funnelProds.filter(p => p.conversion < 2 && p.sessions >= 200 && (p.buyBoxPct === null || p.buyBoxPct >= 80));
+        const hasFunnelData = trafficProb.length > 0 || buyBoxProb.length > 0 || listingProb.length > 0;
+
+        if (hasFunnelData) {
+            html += `<div class="case-card"><div class="case-header" onclick="document.getElementById('funnelDiag').classList.toggle('open')">
+                <div class="case-header-left"><span class="case-priority" style="background:#f5f3ff;color:#6d28d9;">DIAGNOSE</span><span class="case-title">Conversion funnel diagnosis — per-product bottleneck analysis</span></div>
+                <span class="case-amount">${funnelProds.length} products</span>
+            </div><div class="case-body" id="funnelDiag">
+                <div class="case-section"><h4>Why this matters</h4>
+                    <p>Low sales has three very different root causes, and the fix is completely different for each one. Without diagnosing the bottleneck, most sellers apply the wrong fix. Sessions → Buy Box → Conversion is the exact order to investigate.</p>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:12px;">
+                        <div style="background:var(--bg);border-radius:8px;padding:12px;border-left:3px solid #6d28d9;">
+                            <div style="font-size:11px;font-weight:700;color:#6d28d9;margin-bottom:4px;">TRAFFIC PROBLEM</div>
+                            <div style="font-size:13px;">Low sessions. Fix: PPC, SEO, external traffic</div>
+                        </div>
+                        <div style="background:var(--bg);border-radius:8px;padding:12px;border-left:3px solid #d97706;">
+                            <div style="font-size:11px;font-weight:700;color:#d97706;margin-bottom:4px;">BUY BOX PROBLEM</div>
+                            <div style="font-size:13px;">Sessions OK, Buy Box lost. Fix: pricing, inventory, account health</div>
+                        </div>
+                        <div style="background:var(--bg);border-radius:8px;padding:12px;border-left:3px solid #dc2626;">
+                            <div style="font-size:11px;font-weight:700;color:#dc2626;margin-bottom:4px;">LISTING PROBLEM</div>
+                            <div style="font-size:13px;">Traffic + Buy Box OK, low CVR. Fix: images, price, copy, reviews</div>
+                        </div>
+                    </div>
+                </div>`;
+
+            if (buyBoxProb.length > 0) {
+                html += `<div class="case-section">
+                    <h4>⚠️ Buy Box problem — ${buyBoxProb.length} product${buyBoxProb.length > 1 ? 's' : ''}</h4>
+                    <p>These products get traffic but you're not winning the Buy Box on a significant share of sessions. Every session where you don't have the Buy Box is a sale you can't make — the customer can't even add to cart easily.</p>`;
+                buyBoxProb.forEach(p => {
+                    html += `<div style="padding:10px 0;border-bottom:1px solid var(--border);">
+                        <div style="display:flex;justify-content:space-between;align-items:start;">
+                            <strong>${p.name.length > 40 ? p.name.substring(0, 37) + '...' : p.name}</strong>
+                            <span style="color:#d97706;font-weight:700;">Buy Box: ${p.buyBoxPct}%</span>
+                        </div>
+                        <p style="font-size:13px;color:var(--text-mid);margin-top:4px;">${p.sessions.toLocaleString('en-IN')} sessions · ${p.conversion}% CVR · ${p.units} units sold</p>
+                        <p style="font-size:13px;margin-top:4px;color:#92400e;">→ Check pricing (are you above the lowest FBA competitor?), inventory levels, and account health. For FBA sellers, ensure you're not out of stock or in an IPI penalty.</p>
+                    </div>`;
+                });
+                html += `</div>`;
+            }
+
+            if (listingProb.length > 0) {
+                html += `<div class="case-section">
+                    <h4>🔴 Listing problem — ${listingProb.length} product${listingProb.length > 1 ? 's' : ''}</h4>
+                    <p>Traffic is healthy and you own the Buy Box, but shoppers aren't buying. This is a listing quality or pricing issue. Focus your effort here before spending more on ads.</p>`;
+                listingProb.forEach(p => {
+                    const estLostRevenue = Math.round((2.5 - p.conversion) / 100 * p.sessions * p.aov);
+                    html += `<div style="padding:10px 0;border-bottom:1px solid var(--border);">
+                        <div style="display:flex;justify-content:space-between;align-items:start;">
+                            <strong>${p.name.length > 40 ? p.name.substring(0, 37) + '...' : p.name}</strong>
+                            <span style="color:#dc2626;font-weight:700;">CVR: ${p.conversion}%</span>
+                        </div>
+                        <p style="font-size:13px;color:var(--text-mid);margin-top:4px;">${p.sessions.toLocaleString('en-IN')} sessions · ${p.units} units sold · Est. lost revenue at 2.5% CVR: ₹${estLostRevenue.toLocaleString('en-IN')}</p>
+                        <p style="font-size:13px;margin-top:4px;">→ Audit in this order: <strong>1)</strong> Main image vs competitors <strong>2)</strong> Price vs page-1 results <strong>3)</strong> Review count + rating <strong>4)</strong> Title keyword match <strong>5)</strong> Run via Listing Health Check</p>
+                    </div>`;
+                });
+                html += `</div>`;
+            }
+
+            if (trafficProb.length > 0) {
+                html += `<div class="case-section">
+                    <h4>📉 Traffic problem — ${trafficProb.length} product${trafficProb.length > 1 ? 's' : ''}</h4>
+                    <p>These products convert well when they get traffic, but they don't get enough of it. Your listing and pricing are working — the issue is visibility.</p>`;
+                trafficProb.forEach(p => {
+                    html += `<div style="padding:10px 0;border-bottom:1px solid var(--border);">
+                        <div style="display:flex;justify-content:space-between;align-items:start;">
+                            <strong>${p.name.length > 40 ? p.name.substring(0, 37) + '...' : p.name}</strong>
+                            <span style="color:#6d28d9;font-weight:700;">${p.sessions} sessions/period</span>
+                        </div>
+                        <p style="font-size:13px;color:var(--text-mid);margin-top:4px;">CVR: ${p.conversion}% (good) · Units: ${p.units}</p>
+                        <p style="font-size:13px;margin-top:4px;">→ This ASIN is conversion-ready. Increase PPC bids, test Sponsored Display, or improve backend keyword coverage to bring more traffic in.</p>
+                    </div>`;
+                });
+                html += `</div>`;
+            }
+
+            html += `</div></div>`;
+        }
     }
 
     return html;
