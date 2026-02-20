@@ -65,6 +65,7 @@ function resetApp() {
     uploadedFiles = [];
     parsedData = {};
     currentStep = 1;
+    clearLastAnalysis();
 
     document.querySelectorAll('input[name="svc"]').forEach(r => r.checked = false);
     const contBtn = document.getElementById('continueBtn');
@@ -423,6 +424,8 @@ function analyzeFiles() {
         document.getElementById('resultsBtns').style.display = 'flex';
         if (fw) fw.style.display = 'block';
         addChevrons();
+        // Persist this analysis so tab close / refresh doesn't lose it
+        saveLastAnalysis(selectedService, results, uploadedFiles.map(function(f){ return f.name; }));
     }, 1200);
 }
 
@@ -4131,6 +4134,133 @@ function buildClaimTracker(cases) {
 
 const ANALYTICS_KEY = 'vikreya_analytics';
 
+// ============================================
+// ANALYSIS PERSISTENCE
+// Saves the last full analysis to localStorage
+// so closing/refreshing the tab doesn't lose work.
+// Auto-expires after 7 days.
+// ============================================
+
+const LAST_ANALYSIS_KEY = 'vikreya_last_analysis';
+const ANALYSIS_TTL_MS   = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+function saveLastAnalysis(service, html, fileNames) {
+    try {
+        const payload = {
+            service,
+            html,
+            fileNames: fileNames || [],
+            savedAt: Date.now()
+        };
+        localStorage.setItem(LAST_ANALYSIS_KEY, JSON.stringify(payload));
+    } catch(e) {
+        // Storage quota exceeded or private browsing — fail silently
+    }
+}
+
+function loadLastAnalysis() {
+    try {
+        const raw = localStorage.getItem(LAST_ANALYSIS_KEY);
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        // Expire after 7 days
+        if (!data.savedAt || (Date.now() - data.savedAt) > ANALYSIS_TTL_MS) {
+            localStorage.removeItem(LAST_ANALYSIS_KEY);
+            return null;
+        }
+        return data;
+    } catch(e) { return null; }
+}
+
+function clearLastAnalysis() {
+    try { localStorage.removeItem(LAST_ANALYSIS_KEY); } catch(e) {}
+}
+
+function formatRelativeTime(ts) {
+    const diff  = Date.now() - ts;
+    const mins  = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days  = Math.floor(diff / 86400000);
+    if (mins < 2)   return 'just now';
+    if (mins < 60)  return mins + ' minutes ago';
+    if (hours < 24) return hours + ' hour' + (hours > 1 ? 's' : '') + ' ago';
+    return days + ' day' + (days > 1 ? 's' : '') + ' ago';
+}
+
+function buildRestoredBanner(data) {
+    const serviceLabels = {
+        reimbursement: 'Reimbursement Detection',
+        feeaudit:      'FBA Fee Audit',
+        ppc:           'PPC Growth Report',
+        reports:       'Business Reports',
+        listing:       'Listing Health Check'
+    };
+    const label     = serviceLabels[data.service] || data.service;
+    const timeAgo   = formatRelativeTime(data.savedAt);
+    const savedDate = new Date(data.savedAt).toLocaleString('en-IN', {
+        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+    });
+    const fileList  = data.fileNames && data.fileNames.length
+        ? data.fileNames.map(function(f) {
+            return '<span style="background:#f1f5f9;padding:2px 8px;border-radius:4px;font-size:12px;font-family:monospace;">' + f + '</span>';
+          }).join(' ')
+        : '<span style="color:#94a3b8;font-size:12px;">files not recorded</span>';
+
+    return '<div id="restoredBanner" style="background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:1px solid #86efac;border-radius:12px;padding:16px 20px;margin-bottom:24px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">'
+        + '<div style="display:flex;align-items:flex-start;gap:12px;flex:1;min-width:0;">'
+        + '<span style="font-size:22px;line-height:1.3;flex-shrink:0;">\uD83D\uDCBE</span>'
+        + '<div>'
+        + '<div style="font-weight:700;color:#166534;font-size:14px;margin-bottom:4px;">Previous analysis restored — ' + label + '</div>'
+        + '<div style="color:#15803d;font-size:13px;margin-bottom:6px;">Saved ' + timeAgo + ' &nbsp;·&nbsp; ' + savedDate + '</div>'
+        + '<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;"><span style="color:#6b7280;font-size:12px;margin-right:4px;">Files used:</span>' + fileList + '</div>'
+        + '<div style="margin-top:10px;font-size:13px;color:#374151;">Your results are exactly as you left them. Upload new reports to run a fresh analysis.</div>'
+        + '</div></div>'
+        + '<button onclick="dismissRestoredAnalysis()" style="flex-shrink:0;background:#fff;border:1px solid #bbf7d0;border-radius:8px;padding:6px 14px;font-size:13px;color:#166534;cursor:pointer;white-space:nowrap;font-weight:600;">'
+        + '\u00D7 Clear & start fresh'
+        + '</button></div>';
+}
+
+function restoreLastAnalysis() {
+    var data = loadLastAnalysis();
+    if (!data || !data.html) return false;
+
+    // Restore app state so export buttons work correctly
+    selectedService = data.service;
+
+    // Navigate to step 3 silently
+    currentStep = 3;
+    updateProgress();
+    showStep(3);
+
+    var banner          = buildRestoredBanner(data);
+    var resultsDiv      = document.getElementById('resultsState');
+    var resultsBtns     = document.getElementById('resultsBtns');
+    var loadingDiv      = document.getElementById('loadingState');
+    var feedbackWidget  = document.getElementById('feedbackWidget');
+
+    if (loadingDiv)     loadingDiv.style.display  = 'none';
+    if (resultsDiv) {
+        resultsDiv.innerHTML = DOMPurify.sanitize(banner + data.html);
+        resultsDiv.style.display = 'block';
+    }
+    if (resultsBtns)    resultsBtns.style.display = 'flex';
+    if (feedbackWidget) feedbackWidget.style.display = 'block';
+
+    if (typeof addChevrons === 'function') setTimeout(addChevrons, 0);
+
+    trackEvent('analysis_restored', { service: data.service, age_hours: Math.round((Date.now() - data.savedAt) / 3600000) });
+    return true;
+}
+
+function dismissRestoredAnalysis() {
+    clearLastAnalysis();
+    resetApp();
+    showApp();
+    showToast('Cleared — ready for a fresh analysis');
+    trackEvent('analysis_dismissed');
+}
+
+
 function trackEvent(eventName, data) {
     try {
         const events = JSON.parse(localStorage.getItem(ANALYTICS_KEY) || '[]');
@@ -4144,6 +4274,16 @@ function trackEvent(eventName, data) {
 }
 
 trackEvent('page_view');
+
+// ---- RESTORE LAST ANALYSIS ON PAGE LOAD ----
+// If the seller closed/refreshed the tab, bring back their last run.
+(function() {
+    var restored = restoreLastAnalysis();
+    if (!restored) {
+        // Nothing to restore — normal startup, show the app
+        showApp();
+    }
+})();
 
 // Track key actions
 const _showApp = showApp;
