@@ -184,11 +184,27 @@ function buildUploadInstructions() {
     if (info.sampleFile) {
         html += `<div class="sample-file-download">
             <span class="sample-icon">📥</span>
-            <span>Don't have your reports yet? <a href="samples/${info.sampleFile}" download class="sample-link">${info.sampleLabel}</a> — see exactly what the analysis looks like before using your own data.</span>
+            <span>Don't have your reports yet? <a href="samples/${info.sampleFile}" class="sample-link" id="sampleDownloadLink">${info.sampleLabel}</a> — see exactly what the analysis looks like before using your own data.</span>
         </div>`;
     }
     html += '</div>';
-    box.innerHTML = DOMPurify.sanitize(html);
+    box.innerHTML = DOMPurify.sanitize(html, { ADD_ATTR: ['download'] });
+
+    // Attach download handler after DOM insertion (avoids DOMPurify stripping)
+    if (info.sampleFile) {
+        const link = document.getElementById('sampleDownloadLink');
+        if (link) {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const a = document.createElement('a');
+                a.href = 'samples/' + info.sampleFile;
+                a.download = info.sampleFile;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            });
+        }
+    }
 }
 
 // ---- FILE UPLOAD ----
@@ -572,7 +588,7 @@ function analyzeReimbursements() {
                         <p style="font-size:13px;color:#999;margin:0 0 8px 0;">• Run this analysis every 30-60 days — new issues appear with each inventory cycle</p>
                         <p style="font-size:13px;color:#999;margin:0 0 8px 0;">• Upload a longer date range (90-180 days) to catch older unclaimed events</p>
                         ${!types.includes('settlement') ? '<p style="font-size:13px;color:#f59e0b;margin:0 0 8px 0;">• Upload your Settlement Report alongside the Ledger for higher accuracy — without it, we may be missing some cases</p>' : ''}
-                        <p style="font-size:13px;color:#999;margin:0;">• Try the <strong>FBA Fee Audit</strong> to check for weight/fee overcharges — those are a different kind of leak</p>
+                        <p style="font-size:13px;color:#999;margin:0;">• Try the <strong>FBA Fee Audit</strong> to check for weight/fee discrepancies — those are a different type of recoverable amount</p>
                     </div>
                 </div>
             </div>`;
@@ -998,7 +1014,7 @@ function analyzeFeeAudit() {
                 <span class="chevron">▾</span>
             </div>
             <div class="card-body">
-                <p style="font-size:14px;color:#bbb;margin-bottom:16px;">Amazon measures your product dimensions/weight and charges accordingly. If their measurement is wrong, you're overcharged on <strong>every single order</strong>. File a <strong>remeasurement request</strong> via Seller Support.</p>
+                <p style="font-size:14px;color:#bbb;margin-bottom:16px;">FBA fees are based on measured product dimensions and weight. If the recorded measurements differ from your actual product, fees may be higher than expected on <strong>every order</strong>. File a <strong>remeasurement request</strong> via Seller Support to correct it.</p>
                 ${weightIssues.sort((a,b) => (b.issues.find(i=>i.type==='WEIGHT_OVERCHARGE')?.savings||0) - (a.issues.find(i=>i.type==='WEIGHT_OVERCHARGE')?.savings||0)).slice(0, 20).map(s => `
                     <div style="background:var(--bg-card);padding:16px;border-radius:10px;margin-bottom:12px;">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -1156,7 +1172,7 @@ function analyzeFeeAudit() {
                 </div>` : ''}
                 <div style="background:#1c1917;padding:16px;border-radius:10px;border-left:3px solid var(--sage);">
                     <strong style="color:var(--sage);">🔄 Run this audit every settlement period</strong>
-                    <p style="font-size:13px;color:#ccc;margin:8px 0 0 0;">Download your settlement report after each payout cycle and re-upload here. Fee overcharges can start any time Amazon remeasures your products.</p>
+                    <p style="font-size:13px;color:#ccc;margin:8px 0 0 0;">Download your settlement report after each payout cycle and re-upload here. Fee discrepancies can appear any time product measurements are updated.</p>
                 </div>
             </div>
         </div>
