@@ -117,7 +117,9 @@ function buildUploadInstructions() {
                 'Log in to <strong>sellercentral.amazon.in</strong>',
                 'Download each report below as CSV (last 90 days)'
             ],
-            reports: ['FBA Customer Returns', 'Removal Order Detail', 'FBA Inventory Ledger', 'Settlement Reports']
+            reports: ['FBA Customer Returns', 'Removal Order Detail', 'FBA Inventory Ledger', 'Settlement Reports'],
+            sampleFile: 'sample-fba-ledger.csv',
+            sampleLabel: 'Download sample FBA Ledger to test'
         },
         feeaudit: {
             title: 'Download your settlement report from Seller Central:',
@@ -127,7 +129,9 @@ function buildUploadInstructions() {
                 'Click <strong>Download</strong> on the latest settlement period (CSV/TXT)',
                 'This report contains every fee Amazon charged per order'
             ],
-            reports: ['Settlement Report (V2 flat file)']
+            reports: ['Settlement Report (V2 flat file)'],
+            sampleFile: 'sample-settlement.csv',
+            sampleLabel: 'Download sample Settlement Report to test'
         },
         ppc: {
             title: 'Download your advertising reports:',
@@ -137,7 +141,9 @@ function buildUploadInstructions() {
                 '<strong>Recommended:</strong> Also download your <strong>Business Report</strong> (Reports &rarr; Business Reports &rarr; Detail Page Sales and Traffic) &mdash; without it, ACoS is estimated using an account average, not actual per-product revenue',
                 'Upload both files together for the most accurate ACoS results'
             ],
-            reports: ['Search Term Report (required)', 'Business Report (recommended for accurate per-product ACoS)']
+            reports: ['Search Term Report (required)', 'Business Report (recommended for accurate per-product ACoS)'],
+            sampleFile: 'sample-search-term.csv',
+            sampleLabel: 'Download sample Search Term Report to test'
         },
         reports: {
             title: 'Download these reports from Seller Central:',
@@ -147,7 +153,9 @@ function buildUploadInstructions() {
                 'Download "Detail Page Sales and Traffic" (last 90 days)',
                 'Also download "FBA Manage Inventory" report'
             ],
-            reports: []
+            reports: [],
+            sampleFile: 'sample-business-report.csv',
+            sampleLabel: 'Download sample Business Report to test'
         },
         listing: {
             title: 'Prepare your listing information:',
@@ -156,7 +164,9 @@ function buildUploadInstructions() {
                 'Or upload your "Active Listings Report" from Seller Central',
                 'We\'ll score your titles, bullets, images, and keywords'
             ],
-            reports: []
+            reports: [],
+            sampleFile: 'sample-active-listings.csv',
+            sampleLabel: 'Download sample Active Listings Report to test'
         }
     };
 
@@ -170,6 +180,12 @@ function buildUploadInstructions() {
         html += '<div class="report-checklist">';
         info.reports.forEach(r => html += `<span>📋 ${r}</span>`);
         html += '</div>';
+    }
+    if (info.sampleFile) {
+        html += `<div class="sample-file-download">
+            <span class="sample-icon">📥</span>
+            <span>Don't have your reports yet? <a href="samples/${info.sampleFile}" download class="sample-link">${info.sampleLabel}</a> — see exactly what the analysis looks like before using your own data.</span>
+        </div>`;
     }
     html += '</div>';
     box.innerHTML = DOMPurify.sanitize(html);
@@ -459,7 +475,35 @@ function analyzeFiles() {
     const fw = document.getElementById('feedbackWidget');
     if (fw) fw.style.display = 'none';
 
+    // Animated loading progress
+    const steps = ['ls1', 'ls2', 'ls3', 'ls4'];
+    const progressFill = document.getElementById('loadingProgressFill');
+    let currentStep = 0;
+
+    function advanceLoadingStep() {
+        if (currentStep < steps.length) {
+            const el = document.getElementById(steps[currentStep]);
+            if (el) el.classList.add('active');
+            if (progressFill) progressFill.style.width = ((currentStep + 1) / steps.length * 100) + '%';
+            currentStep++;
+        }
+    }
+
+    // Step through at intervals
+    advanceLoadingStep(); // Step 1 immediately
+    const stepTimers = [
+        setTimeout(() => advanceLoadingStep(), 300),
+        setTimeout(() => advanceLoadingStep(), 700),
+        setTimeout(() => advanceLoadingStep(), 1000)
+    ];
+
     setTimeout(() => {
+        // Mark all steps done
+        steps.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('done');
+        });
+
         let results;
         if (selectedService === 'reimbursement') results = analyzeReimbursements();
         else if (selectedService === 'feeaudit') results = analyzeFeeAudit();
@@ -476,7 +520,7 @@ function analyzeFiles() {
         document.getElementById('resultsBtns').style.display = 'flex';
         if (fw) fw.style.display = 'block';
         addChevrons();
-    }, 1200);
+    }, 1400);
 }
 
 function addChevrons() {

@@ -31,6 +31,109 @@
         gtag('js', new Date());
         gtag('config', 'G-XXXXXXXXXX');
     </script>
+    <!-- Structured Data: FAQ Schema -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "Is my data actually safe?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes. All analysis happens inside your browser — your reports are never uploaded to our servers. We don't store, see, or transmit your Seller Central data. When you close the tab, it's gone."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Which reports do I need to download from Seller Central?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "It depends on what you're analyzing. For reimbursements: FBA Inventory Ledger + Settlement Report. For PPC: Search Term Report. For inventory: Business Report + FBA Inventory Age. We show you exactly where to find each one when you select your analysis."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "How accurate are the reimbursement findings?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Very accurate for cases that appear clearly in your FBA Inventory Ledger. We flag cases where your ledger shows a loss event (damaged, lost, or returned) without a corresponding reimbursement entry. Your own Seller Central data is the source of truth — we're just reading it and highlighting what may need attention."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Will Amazon penalize me for filing reimbursement claims?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "No. Requesting reimbursement for FBA fulfillment discrepancies is explicitly covered under their FBA Seller Policy. Sellers have an 18-month window to file claims. Amazon expects sellers to audit and file — it's a standard part of selling on FBA."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Is this really free? What's the catch?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Completely free during our beta period. We're building a product for Indian Amazon sellers and need real-world feedback. We'll introduce paid tiers eventually for advanced features — but the core analysis will always have a free option."
+                }
+            }
+        ]
+    }
+    </script>
+
+    <!-- Structured Data: HowTo Schema -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": "How to find unclaimed Amazon FBA reimbursements",
+        "description": "Upload your Seller Central reports to Vikreya and get claim-ready reimbursement cases in under 3 minutes.",
+        "totalTime": "PT3M",
+        "step": [
+            {
+                "@type": "HowToStep",
+                "position": 1,
+                "name": "Choose what to analyze",
+                "text": "Select from reimbursements, PPC analysis, inventory reports, fee audit, or listing health check."
+            },
+            {
+                "@type": "HowToStep",
+                "position": 2,
+                "name": "Upload your Seller Central report",
+                "text": "Drag in the CSV or Excel file from your Seller Central dashboard. Your data never leaves your browser."
+            },
+            {
+                "@type": "HowToStep",
+                "position": 3,
+                "name": "Get actionable insights",
+                "text": "Every issue is flagged with claim templates ready to download. Act immediately with Amazon Seller Support."
+            }
+        ]
+    }
+    </script>
+
+    <!-- Structured Data: WebApplication Schema -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Vikreya",
+        "url": "https://vikreya.vercel.app",
+        "description": "Free tool to find unclaimed FBA reimbursements for Amazon.in sellers. Upload reports, get claim templates in minutes.",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Any (runs in browser)",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "INR"
+        },
+        "author": {
+            "@type": "Organization",
+            "name": "Vikreya",
+            "url": "https://vikreya.vercel.app"
+        }
+    }
+    </script>
 </head>
 <body>
 
@@ -622,8 +725,16 @@
             <div id="loadingState" style="display:none;">
                 <div class="loading-box">
                     <div class="spinner"></div>
-                    <p>Analyzing your data…</p>
-                    <p class="loading-sub">Cross-referencing reports</p>
+                    <p class="loading-title">Analyzing your data…</p>
+                    <div class="loading-steps">
+                        <div class="loading-step" id="ls1"><span class="ls-dot"></span> Reading uploaded files</div>
+                        <div class="loading-step" id="ls2"><span class="ls-dot"></span> Parsing report columns</div>
+                        <div class="loading-step" id="ls3"><span class="ls-dot"></span> Cross-referencing data</div>
+                        <div class="loading-step" id="ls4"><span class="ls-dot"></span> Generating insights</div>
+                    </div>
+                    <div class="loading-progress-bar">
+                        <div class="loading-progress-fill" id="loadingProgressFill"></div>
+                    </div>
                 </div>
             </div>
             <div id="resultsState" style="display:none;"></div>
