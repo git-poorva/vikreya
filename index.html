@@ -436,6 +436,25 @@
         </div>
     </section>
 
+    <!-- Email Capture — for sellers not ready to upload yet -->
+    <section class="email-capture" id="notify">
+        <div class="container">
+            <div class="email-capture-inner">
+                <h2>Not ready to upload yet?</h2>
+                <p>Get notified when we launch new features — reimbursement automation, inventory alerts, and more. No spam, just product updates for Amazon.in sellers.</p>
+                <form id="emailForm" class="email-form" action="https://formspree.io/f/YOUR_FORM_ID" method="POST" onsubmit="return submitEmail(event);">
+                    <input type="email" id="emailInput" class="email-input" placeholder="your@email.com" required>
+                    <button type="submit" class="btn-hero-primary email-submit-btn">Join waitlist →</button>
+                </form>
+                <div id="emailSuccess" class="email-success" style="display:none;">
+                    <span>✅</span>
+                    <p>You're on the list! We'll notify you when new features drop.</p>
+                </div>
+                <p class="email-privacy">No spam. Unsubscribe anytime. We respect your inbox.</p>
+            </div>
+        </div>
+    </section>
+
     <!-- Footer -->
     <footer class="footer">
         <div class="container">

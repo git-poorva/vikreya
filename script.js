@@ -13,6 +13,17 @@ let uploadedFiles = [];
 let parsedData = {};
 let analysisResults = null; // Store structured analysis results for export
 
+// Simple hash function for generating content-based IDs (Fix #14)
+function simpleHash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash).toString(36);
+}
+
 // ---- NAVIGATION ----
 
 function showApp() {
@@ -266,8 +277,46 @@ function parseFile(file) {
                 parsedData[file.name] = { headers: [], rows: [], type: 'unknown' };
             }
         });
+    } else if ((ext === 'xlsx' || ext === 'xls') && typeof XLSX !== 'undefined') {
+        // Parse Excel files using the SheetJS XLSX library
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                // Use the first sheet
+                const sheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+                
+                if (jsonData.length > 0) {
+                    const headers = Object.keys(jsonData[0]);
+                    parsedData[file.name] = {
+                        headers: headers,
+                        rows: jsonData,
+                        type: detectReportType(headers)
+                    };
+                    // Re-enable analyze button since data is now ready
+                    const btn = document.getElementById('analyzeBtn');
+                    if (btn && uploadedFiles.length > 0) btn.disabled = false;
+                } else {
+                    parsedData[file.name] = { headers: [], rows: [], type: 'unknown' };
+                }
+            } catch (err) {
+                console.error('Excel parse error:', err);
+                parsedData[file.name] = { headers: [], rows: [], type: 'excel-error' };
+                showToast('Could not read "' + file.name + '". Try exporting as CSV from Seller Central.');
+            }
+        };
+        reader.onerror = function() {
+            parsedData[file.name] = { headers: [], rows: [], type: 'excel-error' };
+            showToast('Error reading "' + file.name + '". Please export as CSV from Seller Central.');
+        };
+        reader.readAsArrayBuffer(file);
     } else {
+        // XLSX library not loaded - tell user to use CSV
         parsedData[file.name] = { headers: [], rows: [], type: 'excel-pending' };
+        showToast('Excel files require the XLSX library. Please export as CSV from Seller Central instead.');
     }
 }
 
@@ -391,16 +440,17 @@ function analyzeFiles() {
         }
 
         // Have ledger but no settlement — warn (don't block, but flag risk)
+        // Fix #16: Use a local variable in analyzeFiles scope, not a global
+        let _reimbWarning = null;
         if (hasLedger && !hasSettlement) {
-            // Store warning to inject into results later
-            window._reimbWarning = `<div style="background:#fffbeb;border:1px solid #d97706;border-radius:10px;padding:16px;margin-bottom:20px;">
+            _reimbWarning = `<div style="background:#fffbeb;border:1px solid #d97706;border-radius:10px;padding:16px;margin-bottom:20px;">
                 <p style="margin:0;font-size:14px;color:#92400e;">
                     <strong>⚠️ For higher accuracy:</strong> Upload your <strong>Settlement Report</strong> alongside the Inventory Ledger. Without it, we can't verify which cases Amazon has already reimbursed — some results below may already be resolved. Go to Reports → Payments → All Statements → Download.
                 </p>
             </div>`;
-        } else {
-            window._reimbWarning = null;
         }
+        // Pass to analysis function via a temporary property
+        window._reimbWarning = _reimbWarning;
     }
 
     document.getElementById('loadingState').style.display = 'block';
@@ -416,6 +466,9 @@ function analyzeFiles() {
         else if (selectedService === 'ppc') results = analyzePPC();
         else if (selectedService === 'reports') results = analyzeBusinessReports();
         else results = analyzeListings();
+
+        // Fix #16: Clear the global warning after use to prevent stale state
+        window._reimbWarning = null;
 
         document.getElementById('loadingState').style.display = 'none';
         document.getElementById('resultsState').innerHTML = DOMPurify.sanitize(results);
@@ -453,6 +506,40 @@ function analyzeReimbursements() {
     const hasRealData = types.some(t => ['returns', 'removals', 'ledger', 'settlement'].includes(t));
 
     let cases = hasRealData ? detectRealCases() : [];
+    const totalLedgerCases = cases._totalLedgerCases || 0;
+    const hasRealResults = hasRealData && cases.length > 0;
+    
+    // Fix #11: If real data uploaded but no issues found, show explicit "clean" state
+    // instead of silently falling back to sample data
+    if (hasRealData && cases.length === 0) {
+        const cleanHtml = `
+            <div class="results-header">
+                <h2>Analysis complete</h2>
+                <div class="big-number" style="color: var(--green);">✅ Clean</div>
+                <p class="results-meta">No reimbursement issues detected</p>
+                <div class="results-meta"><span>0 cases found</span> · <span>${Object.keys(parsedData).length} reports analyzed</span></div>
+            </div>
+            <div class="result-card" style="border-left: 4px solid var(--green);">
+                <div class="card-body" style="display:block;">
+                    <h3 style="margin-bottom:12px;">Good news — no outstanding reimbursement claims found</h3>
+                    <p style="font-size:14px;color:#bbb;margin-bottom:16px;">We analyzed your FBA Inventory Ledger${types.includes('settlement') ? ' and Settlement Report' : ''} and didn't find any lost, damaged, or misplaced inventory events that haven't been reimbursed.</p>
+                    <div style="background:var(--bg-card);padding:16px;border-radius:10px;">
+                        <p style="font-size:14px;color:#ccc;margin:0 0 12px 0;"><strong>Tips for future checks:</strong></p>
+                        <p style="font-size:13px;color:#999;margin:0 0 8px 0;">• Run this analysis every 30-60 days — new issues appear with each inventory cycle</p>
+                        <p style="font-size:13px;color:#999;margin:0 0 8px 0;">• Upload a longer date range (90-180 days) to catch older unclaimed events</p>
+                        ${!types.includes('settlement') ? '<p style="font-size:13px;color:#f59e0b;margin:0 0 8px 0;">• Upload your Settlement Report alongside the Ledger for higher accuracy — without it, we may be missing some cases</p>' : ''}
+                        <p style="font-size:13px;color:#999;margin:0;">• Try the <strong>FBA Fee Audit</strong> to check for weight/fee overcharges — those are a different kind of leak</p>
+                    </div>
+                </div>
+            </div>`;
+        
+        // Save clean session
+        const savedSession = { service: 'reimbursement', timestamp: new Date().toISOString(), totalAmount: 0, caseCount: 0, files: uploadedFiles.map(f => f.name), cases: [] };
+        saveSession(savedSession);
+        trackEvent('analysis_complete', { service: 'reimbursement', cases: 0, realData: true });
+        return cleanHtml;
+    }
+    
     if (cases.length === 0) cases = getSampleReimbursementCases();
 
     const totalAmount = cases.reduce((sum, c) => sum + c.amount, 0);
@@ -464,7 +551,12 @@ function analyzeReimbursements() {
         totalAmount,
         caseCount: cases.length,
         files: uploadedFiles.map(f => f.name),
-        cases: cases.map((c, i) => ({ id: 'case_' + i, type: c.type, amount: c.amount, status: 'pending', description: c.description }))
+        cases: cases.map((c, i) => ({
+            // Fix #14: Use content-based ID (hash of type + description) instead of positional index
+            // so claim statuses survive re-analysis
+            id: 'case_' + simpleHash(c.type + '|' + (c.description || '').substring(0, 80)),
+            type: c.type, amount: c.amount, status: 'pending', description: c.description
+        }))
     };
     saveSession(savedSession);
 
@@ -473,7 +565,7 @@ function analyzeReimbursements() {
             <h2>Analysis complete</h2>
             <div class="big-number">₹${totalAmount.toLocaleString('en-IN')}</div>
             <p class="results-meta">Potential reimbursement opportunities</p>
-            <div class="results-meta"><span>${cases.length} cases found</span> · <span>${Object.keys(parsedData).length} reports analyzed</span></div>
+            <div class="results-meta"><span>${cases.length} cases found${totalLedgerCases > 20 ? ' (showing 20 of ' + totalLedgerCases + ' — download full report for all cases)' : ''}</span> · <span>${Object.keys(parsedData).length} reports analyzed</span></div>
             ${!hasRealData ? '<p style="font-size:13px; color:var(--gold); margin-top:12px;">Showing sample results — upload real Amazon reports for your actual data</p>' : ''}
         </div>
     `;
@@ -494,19 +586,62 @@ function detectRealCases() {
     const returnData = Object.values(parsedData).find(d => d.type === 'returns');
     const settlementData = Object.values(parsedData).find(d => d.type === 'settlement');
 
-    // Build a set of FNSKUs/ASINs that already have reimbursements in Settlement
-    // to eliminate false positives
+    // Build a set of reimbursement events from Settlement using composite keys
+    // (ASIN/FNSKU + date + quantity) to avoid false negatives from coarse matching
     const alreadyReimbursed = new Set();
     if (settlementData && settlementData.rows) {
         settlementData.rows.forEach(row => {
             const type = (row['amount-description'] || row['transaction-type'] || '').toLowerCase();
             if (type.includes('reimburs') || type.includes('fba_reimbursement')) {
-                const fnsku = row['fnsku'] || row['FNSKU'] || '';
-                const asin = row['asin'] || row['ASIN'] || '';
-                if (fnsku) alreadyReimbursed.add(fnsku.trim());
-                if (asin) alreadyReimbursed.add(asin.trim());
+                const fnsku = (row['fnsku'] || row['FNSKU'] || '').trim();
+                const asin = (row['asin'] || row['ASIN'] || '').trim();
+                const date = (row['posted-date'] || row['date'] || row['Date'] || '').trim();
+                const qty = Math.abs(parseInt(row['quantity-purchased'] || row['quantity'] || 1));
+                // Create event-level keys for precise matching
+                const dateKey = date.substring(0, 10); // normalize to YYYY-MM-DD
+                if (fnsku) alreadyReimbursed.add(fnsku + '|' + dateKey + '|' + qty);
+                if (asin) alreadyReimbursed.add(asin + '|' + dateKey + '|' + qty);
             }
         });
+    }
+
+    // Build per-ASIN AOV map from business report data (if available)
+    // so reimbursement values use actual product prices instead of ₹700 fallback
+    const asinValueMap = {};
+    const businessData = Object.values(parsedData).find(d => d.type === 'business');
+    if (businessData && businessData.rows) {
+        businessData.rows.forEach(row => {
+            const asin = (row['(Child) ASIN'] || row['ASIN'] || row['asin'] || '').trim();
+            const units = parseInt((row['Units Ordered'] || row['units-ordered'] || row['Units'] || '0').toString().replace(/,/g, '')) || 0;
+            const sales = parseFloat((row['Ordered Product Sales'] || row['ordered-product-sales'] || '0').toString().replace(/[₹,]/g, '')) || 0;
+            if (asin && units > 0 && sales > 0) {
+                if (!asinValueMap[asin]) asinValueMap[asin] = { totalSales: 0, totalUnits: 0 };
+                asinValueMap[asin].totalSales += sales;
+                asinValueMap[asin].totalUnits += units;
+            }
+        });
+    }
+    // Also try to extract AOV from settlement data (principal amounts per ASIN)
+    if (settlementData && settlementData.rows) {
+        settlementData.rows.forEach(row => {
+            const asin = (row['asin'] || row['ASIN'] || '').trim();
+            const amtType = (row['amount-description'] || row['amount-type'] || '').toLowerCase();
+            const amount = parseFloat(row['amount'] || row['total'] || 0);
+            if (asin && (amtType.includes('principal') || amtType.includes('productcharges')) && amount > 0) {
+                if (!asinValueMap[asin]) asinValueMap[asin] = { totalSales: 0, totalUnits: 0 };
+                asinValueMap[asin].totalSales += amount;
+                asinValueMap[asin].totalUnits += 1;
+            }
+        });
+    }
+
+    function getReimbursementValue(asin, qty) {
+        const DEFAULT_VALUE = 700; // fallback per unit
+        if (asin && asinValueMap[asin] && asinValueMap[asin].totalUnits > 0) {
+            const aov = Math.round(asinValueMap[asin].totalSales / asinValueMap[asin].totalUnits);
+            return qty * aov;
+        }
+        return qty * DEFAULT_VALUE;
     }
 
     if (ledgerData && ledgerData.rows.length > 0) {
@@ -520,11 +655,14 @@ function detectRealCases() {
             const asin = (row['asin'] || row['ASIN'] || 'N/A').trim();
             const key = fnsku !== 'N/A' ? fnsku : asin;
 
-            // Skip if already reimbursed in settlement
-            if (alreadyReimbursed.has(fnsku) || alreadyReimbursed.has(asin)) return;
-
-            const qty = Math.abs(parseInt(row['quantity'] || row['Quantity'] || 1));
+            // Skip if already reimbursed in settlement (using event-level matching, not just ASIN presence)
+            // Build a composite key: ASIN + approximate date + qty to avoid false negatives
+            // (fix for issue #2 - settlement cross-reference was too coarse)
             const date = row['date'] || row['Date'] || row['transaction-item-id'] || '';
+            const qty = Math.abs(parseInt(row['quantity'] || row['Quantity'] || 1));
+            const eventKey = (fnsku !== 'N/A' ? fnsku : asin) + '|' + date.substring(0, 10) + '|' + qty;
+            if (alreadyReimbursed.has(eventKey)) return;
+
             const transId = row['transaction-item-id'] || row['reference-id'] || row['Reference ID'] || '';
             const dispositionStr = row['fulfilled-quantity'] || row['fulfillment-center-id'] || '';
             const fc = row['fulfillment-center-id'] || row['Fulfillment Center ID'] || '';
@@ -537,8 +675,12 @@ function detectRealCases() {
             if (!fnSkuGroups[key].transId && transId) fnSkuGroups[key].transId = transId;
         });
 
-        Object.values(fnSkuGroups).slice(0, 20).forEach(item => {
-            const estimatedValue = item.qty * 700;
+        const allGroups = Object.values(fnSkuGroups);
+        const totalFound = allGroups.length;
+        allGroups.slice(0, 20).forEach(item => {
+            const estimatedValue = getReimbursementValue(item.asin, item.qty);
+            const perUnitValue = item.qty > 0 ? Math.round(estimatedValue / item.qty) : 700;
+            const valueSource = (item.asin && asinValueMap[item.asin] && asinValueMap[item.asin].totalUnits > 0) ? 'from your sales data' : 'estimated (upload Business Report for accurate values)';
             const eventType = item.events[0] || 'inventory loss';
             const transactionType = eventType.includes('damage') ? 'DAMAGED' : eventType.includes('misplace') ? 'MISPLACED' : 'LOST_WAREHOUSE';
 
@@ -546,8 +688,8 @@ function detectRealCases() {
                 type: 'Inventory Loss — ' + transactionType,
                 priority: 'high',
                 amount: estimatedValue,
-                description: `${item.qty} unit(s) of FNSKU ${item.fnsku} (ASIN: ${item.asin}) flagged as "${eventType}" in your FBA Inventory Ledger with no matching reimbursement in your Settlement Report.`,
-                proof: `FNSKU: ${item.fnsku} · ASIN: ${item.asin} · Qty: ${item.qty} · Transaction type: ${transactionType}${item.date ? ' · Date: ' + item.date : ''}${item.transId ? ' · Ref ID: ' + item.transId : ''}${item.fc ? ' · FC: ' + item.fc : ''}`,
+                description: `${item.qty} unit(s) of FNSKU ${item.fnsku} (ASIN: ${item.asin}) flagged as "${eventType}" in your FBA Inventory Ledger with no matching reimbursement in your Settlement Report. Value: ₹${perUnitValue}/unit (${valueSource}).`,
+                proof: `FNSKU: ${item.fnsku} · ASIN: ${item.asin} · Qty: ${item.qty} · Value/unit: ₹${perUnitValue} (${valueSource}) · Transaction type: ${transactionType}${item.date ? ' · Date: ' + item.date : ''}${item.transId ? ' · Ref ID: ' + item.transId : ''}${item.fc ? ' · FC: ' + item.fc : ''}`,
                 steps: [
                     'Go to Seller Central → Help → Contact Us',
                     'Select "Fulfillment by Amazon" → "FBA Inventory"',
@@ -567,6 +709,9 @@ function detectRealCases() {
                 })
             });
         });
+
+        // Store total found for display (fix #13: show total when capped at 20)
+        cases._totalLedgerCases = totalFound;
     }
 
     if (returnData && returnData.rows.length > 0) {
@@ -581,8 +726,10 @@ function detectRealCases() {
             const refundAmount = parseFloat((row['refund-amount'] || row['amount-refunded'] || '0').toString().replace(/[₹,]/g, '')) || 850;
             const reason = row['return-reason'] || row['Reason'] || status;
 
-            // Skip if this ASIN already reimbursed
-            if (alreadyReimbursed.has(asin)) return;
+            // Skip if this specific return event was already reimbursed
+            // Use order ID + ASIN as composite key for more precise matching
+            const returnEventKey = asin + '|' + (returnDate || '').substring(0, 10) + '|1';
+            if (alreadyReimbursed.has(returnEventKey)) return;
 
             cases.push({
                 type: 'Customer Return — Item Not Received Back',
@@ -691,15 +838,34 @@ function analyzeFeeAudit() {
             totalOvercharge += Math.round(s.totalRefFee * 0.3);
         }
 
-        // Weight handling fee check — Amazon.in FBA standard:
+        // Weight handling fee check — Amazon.in FBA fee tiers:
         // Local: ₹29 (first 500g), ₹13/500g after. National: ₹55 (first 500g), ₹23/500g after.
-        // If avg weight handling > ₹120/order, likely overweight measurement
-        if (avgWHFee > 120) {
-            const expectedFee = 55 + (23 * 2); // assume ~1.5kg standard product national
+        // Instead of assuming 1.5kg for all products, infer the expected weight tier from the fee amount.
+        // Fee tiers: ≤500g local=₹29/national=₹55, 1kg=₹42/₹78, 1.5kg=₹55/₹101, 2kg=₹68/₹124, etc.
+        // We flag as overcharge if the fee implies a weight tier 2+ steps above what's typical for the price range.
+        if (avgWHFee > 0 && s.orders >= 3) {
+            // Reverse-engineer implied weight from fee (using national rates as baseline)
+            // National: base ₹55 + ₹23 per additional 500g
+            const impliedWeightSteps = avgWHFee > 55 ? Math.ceil((avgWHFee - 55) / 23) : 0;
+            const impliedWeightKg = 0.5 + (impliedWeightSteps * 0.5);
+            
+            // Heuristic: products under ₹500 are usually <1kg; under ₹2000 usually <2kg; etc.
+            let expectedMaxWeight;
+            if (avgPrice < 500) expectedMaxWeight = 1.0;
+            else if (avgPrice < 1500) expectedMaxWeight = 2.0;
+            else if (avgPrice < 3000) expectedMaxWeight = 3.0;
+            else expectedMaxWeight = 5.0;
+            
+            // Calculate expected fee for the expected weight
+            const expectedSteps = Math.max(0, Math.ceil((expectedMaxWeight - 0.5) / 0.5));
+            const expectedFee = 55 + (23 * expectedSteps);
+            
+            // Only flag if implied weight is significantly higher than expected for the price range
+            // AND the per-order overcharge is meaningful
             const overchargePerOrder = avgWHFee - expectedFee;
-            if (overchargePerOrder > 20) {
+            if (impliedWeightKg > expectedMaxWeight + 1.0 && overchargePerOrder > 20) {
                 const totalOver = Math.round(overchargePerOrder * s.orders);
-                s.issues.push({ type: 'WEIGHT_OVERCHARGE', severity: 'critical', msg: `Avg weight handling fee: ₹${avgWHFee.toFixed(0)}/order. Expected for standard 1.5kg item: ~₹${expectedFee}. Possible overcharge: ₹${overchargePerOrder.toFixed(0)}/order.`, savings: totalOver });
+                s.issues.push({ type: 'WEIGHT_OVERCHARGE', severity: 'critical', msg: `Avg weight handling fee: ₹${avgWHFee.toFixed(0)}/order (implies ~${impliedWeightKg}kg). For products at ₹${Math.round(avgPrice)} price point, expected weight is typically ≤${expectedMaxWeight}kg (~₹${expectedFee}/order). Possible overcharge: ₹${overchargePerOrder.toFixed(0)}/order.`, savings: totalOver });
                 overchargeCount++;
                 totalOvercharge += totalOver;
             }
@@ -1052,6 +1218,32 @@ function analyzePPC() {
 
     // ---- MISMATCH WARNING (wrong business report uploaded) ----
     if (a.bizMismatchWarning) html += a.bizMismatchWarning;
+
+    // ---- Fix #12: Date column missing warning ----
+    if (a.dateColumnMissing) {
+        html += `<div style="background:#fffbeb;border:1px solid #d97706;border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:start;gap:12px;">
+            <span style="font-size:20px;line-height:1.4;">📅</span>
+            <div>
+                <strong style="color:#92400e;font-size:14px;">Date column not found in your report</strong>
+                <p style="margin:4px 0 0;font-size:13px;color:#78350f;">
+                    Your Search Term Report doesn't include a Date column — this means trend detection (rising/declining keywords) is disabled for this analysis. To enable it, download a <strong>date-range report</strong> from Advertising → Reports → create a Search Term Report with a 60-day date range and "daily" or "weekly" breakout.
+                </p>
+            </div>
+        </div>`;
+    }
+
+    // ---- Fix #6: Trend data unavailable for some keywords ----
+    if (!a.dateColumnMissing && a.trendUnavailableCount > 0) {
+        html += `<div style="background:#f0f9ff;border:1px solid #0284c7;border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:start;gap:12px;">
+            <span style="font-size:20px;line-height:1.4;">📊</span>
+            <div>
+                <strong style="color:#0c4a6e;font-size:14px;">Trend data unavailable for ${a.trendUnavailableCount} keywords</strong>
+                <p style="margin:4px 0 0;font-size:13px;color:#075985;">
+                    These keywords had fewer than 4 date-level rows, so we couldn't calculate a trend direction (rising/declining/stable). This usually happens with a 30-day report or low-volume keywords. Upload a <strong>60-day report</strong> for full trend detection across all keywords.
+                </p>
+            </div>
+        </div>`;
+    }
 
     // ---- ACCURACY BANNER: prompt for Business Report if not uploaded ----
     if (hasPPCData && !hasBizData) {
@@ -1579,9 +1771,13 @@ function ppcParseReal() {
     });
 
     // ---- TREND DETECTION ----
+    let trendUnavailableCount = 0;
     function getTrend(keyword) {
         const entries = dateMap[keyword];
-        if (!entries || entries.length < 4) return null;
+        if (!entries || entries.length < 4) {
+            if (entries && entries.length > 0) trendUnavailableCount++;
+            return null;
+        }
         const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
         const mid = Math.floor(sorted.length / 2);
         const firstHalf = sorted.slice(0, mid);
@@ -1703,10 +1899,25 @@ function ppcParseReal() {
 
     // ---- CATEGORY BREAKDOWN ----
     const cats = { branded: { count: 0, spend: 0, orders: 0, sales: 0 }, competitor: { count: 0, spend: 0, orders: 0, sales: 0 }, generic: { count: 0, spend: 0, orders: 0, sales: 0 }, longtail: { count: 0, spend: 0, orders: 0, sales: 0 } };
-    const compBrands = ['boat', 'noise', 'oneplus', 'realme', 'samsung', 'jbl', 'sony', 'bose', 'sennheiser', 'zebronics', 'portronics', 'mivi', 'ptron', 'fire-boltt', 'amazfit', 'xiaomi', 'mi', 'oppo', 'vivo', 'apple', 'marshall', 'harman', 'philips', 'skullcandy'];
+    const compBrands = [
+        // Electronics & Audio
+        'boat', 'noise', 'oneplus', 'realme', 'samsung', 'jbl', 'sony', 'bose', 'sennheiser', 'zebronics', 'portronics', 'mivi', 'ptron', 'fire-boltt', 'amazfit', 'xiaomi', 'mi', 'oppo', 'vivo', 'apple', 'marshall', 'harman', 'philips', 'skullcandy', 'lg', 'motorola', 'nothing',
+        // Kitchen & Home
+        'prestige', 'bajaj', 'pigeon', 'butterfly', 'hawkins', 'morphy richards', 'preethi', 'borosil', 'wonderchef', 'milton', 'cello', 'ganesh', 'kuhn rikon', 'vinod',
+        // Fashion & Apparel  
+        'puma', 'nike', 'adidas', 'levi', 'levis', 'allen solly', 'peter england', 'van heusen', 'us polo', 'campus', 'bata', 'wildcraft', 'woodland', 'wrogn', 'hrx',
+        // Beauty & Personal Care
+        'lakme', 'mamaearth', 'wow', 'biotique', 'nivea', 'loreal', 'cetaphil', 'neutrogena', 'dove', 'himalaya', 'plum', 'mcaffeine',
+        // Home & Furniture
+        'wipro', 'syska', 'havells', 'crompton', 'orient', 'usha', 'godrej', 'nilkamal',
+        // Toys & Baby
+        'lego', 'funskool', 'mattel', 'fisher-price', 'chicco', 'mee mee',
+        // Sports & Fitness
+        'decathlon', 'nivia', 'cosco', 'yonex', 'li-ning', 'boldfit'
+    ];
     const freqW = {};
     aggTerms.filter(t => t.orders > 0).forEach(t => { const w = t.keyword.split(' ')[0]; freqW[w] = (freqW[w] || 0) + 1; });
-    const skipWords = ['wireless', 'bluetooth', 'best', 'for', 'with', 'the', 'buy', 'price', 'cheap', 'online', 'india', 'earbuds', 'earphone', 'speaker', 'watch', 'cable'];
+    const skipWords = ['wireless', 'bluetooth', 'best', 'for', 'with', 'the', 'buy', 'price', 'cheap', 'online', 'india', 'earbuds', 'earphone', 'speaker', 'watch', 'cable', 'under', 'pack', 'set', 'combo', 'free', 'new', 'latest', 'top', 'review', 'premium', 'original', 'genuine', 'branded', 'amazon', 'offer', 'sale', 'discount', 'men', 'women', 'boys', 'girls', 'kids', 'baby', 'home', 'kitchen', 'mobile', 'phone'];
     const brandGuess = Object.entries(freqW).filter(([w]) => !skipWords.includes(w)).sort((a, b) => b[1] - a[1])[0];
     const brand = brandGuess ? brandGuess[0] : null;
 
@@ -1744,6 +1955,10 @@ function ppcParseReal() {
     // Only mark bizData as used when the business report actually provided per-ASIN AOV
     const hasBizData = !!bizData && Object.keys(asinAOV).length > 0;
 
+    // Fix #6: Count keywords where trend data was unavailable due to insufficient date rows
+    // Fix #12: Check if Date column was missing entirely from the report
+    const dateColumnMissing = Object.keys(dateMap).length === 0 && aggTerms.length > 0;
+
     return {
         totalSpend, totalSales, totalOrders, total: aggTerms.length,
         avgAcos, avgCpc, accountAOV, hasBizData, asinAOV,
@@ -1753,7 +1968,9 @@ function ppcParseReal() {
         cannibal, cats,
         campaigns,    // Phase 2: campaign-level budget efficiency
         bizMismatchWarning,
-        broadBleed    // Phase 2: broad match waste analysis
+        broadBleed,    // Phase 2: broad match waste analysis
+        trendUnavailableCount, // Fix #6: keywords with insufficient trend data
+        dateColumnMissing      // Fix #12: Date column missing from report
     };
 }
 
@@ -2344,7 +2561,11 @@ function analyzeListings() {
             row['bullet-point4'] || row['bullet_point4'] || '',
             row['bullet-point5'] || row['bullet_point5'] || ''
         ].filter(b => b.trim().length > 0);
-        const imageCount = parseInt(row['number-of-images'] || row['images'] || 0);
+        // Note: Amazon Active Listings Report does NOT include a 'number-of-images' column.
+        // We set imageCount to -1 (unknown) when we can't determine it, rather than defaulting to 0
+        // which would falsely flag every listing as critically missing images.
+        const rawImageCount = row['number-of-images'] || row['images'] || '';
+        const imageCount = rawImageCount !== '' ? parseInt(rawImageCount) : -1; // -1 = unknown
         const backendKw = (row['backend-keywords'] || row['generic-keywords'] || row['search-terms'] || '').trim();
         const price = parseFloat((row['price'] || '0').replace(/[₹,]/g, ''));
         return { asin, title, bullets, imageCount, backendKw, price };
@@ -2459,7 +2680,12 @@ function analyzeListings() {
         });
 
         // ---- IMAGE ANALYSIS ----
-        if (l.imageCount >= 7) { score += 25; feedback.push({ area: 'images', type: 'win', text: l.imageCount + ' images — excellent coverage.' }); }
+        if (l.imageCount === -1) {
+            // Image count unknown (not available in Active Listings Report)
+            score += 10; // neutral score
+            feedback.push({ area: 'images', type: 'tip', text: 'Image count not available in your Active Listings Report. Amazon doesn\'t include this column in the standard export. Check your listing images directly in Seller Central → Manage Inventory → Edit.',
+                suggestion: 'RECOMMENDED IMAGE LINEUP FOR AMAZON.IN:\n1. Main image — white background, product fills 85% of frame\n2. Lifestyle image — product in use\n3. Infographic — key features with callouts\n4. Size/scale image — product next to common object\n5. Packaging image — what the customer receives\n6. Close-up — material/texture detail\n7. A+ Content banner (if Brand Registered)\n\nAim for 7-9 images total. Listings with 7+ images see up to 30% higher conversion on Amazon.in.' });
+        } else if (l.imageCount >= 7) { score += 25; feedback.push({ area: 'images', type: 'win', text: l.imageCount + ' images — excellent coverage.' }); }
         else if (l.imageCount >= 5) { score += 18; feedback.push({ area: 'images', type: 'warning', text: l.imageCount + ' images. Good start, but 7-9 images is the sweet spot on Amazon.in.',
             suggestion: generateImageChecklist(l.imageCount) }); }
         else if (l.imageCount >= 2) { score += 8; feedback.push({ area: 'images', type: 'fix', text: 'Only ' + l.imageCount + ' images. Listings with 7+ images see up to 30% higher conversion on Amazon.in.',
@@ -2508,7 +2734,8 @@ function analyzeListings() {
     const okTitles = scored.filter(l => l.title.length >= 80 && l.title.length < 150);
     const missingBullets = scored.filter(l => l.bullets.length < 5);
     const noBullets = scored.filter(l => l.bullets.length === 0);
-    const lowImages = scored.filter(l => l.imageCount < 5);
+    const lowImages = scored.filter(l => l.imageCount >= 0 && l.imageCount < 5);
+    const unknownImages = scored.filter(l => l.imageCount === -1);
     const noBackend = scored.filter(l => !l.backendKw || l.backendKw.length === 0);
     const lowBackend = scored.filter(l => l.backendKw && l.backendKw.length > 0 && l.backendKw.length < 200);
 
@@ -4254,6 +4481,26 @@ function submitFeedback() {
     const all = JSON.parse(localStorage.getItem('vikreya_feedback') || '[]');
     all.push({ ...data, timestamp: new Date().toISOString() });
     localStorage.setItem('vikreya_feedback', JSON.stringify(all));
+
+    // Send feedback to Formspree so you actually receive it (Fix #10)
+    // Replace YOUR_FEEDBACK_FORM_ID with your real Formspree form ID
+    const formspreeUrl = 'https://formspree.io/f/YOUR_FEEDBACK_FORM_ID';
+    if (!formspreeUrl.includes('YOUR_FEEDBACK_FORM_ID')) {
+        fetch(formspreeUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({
+                _subject: 'Vikreya Feedback: ' + feedbackRating + '/5 — ' + selectedService,
+                rating: feedbackRating,
+                tags: feedbackTags.join(', '),
+                comment: text.trim(),
+                email: email.trim(),
+                service: selectedService,
+                filesCount: uploadedFiles.length,
+                timestamp: new Date().toISOString()
+            })
+        }).catch(() => {}); // Silent fail — localStorage backup exists
+    }
 
     const card = document.querySelector('.feedback-card');
     if (card) card.innerHTML = DOMPurify.sanitize(`<div class="feedback-done"><h3>Thank you!</h3><p>Your feedback shapes what we build next.</p></div>`);
