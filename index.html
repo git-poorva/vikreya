@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vikreya — Free Amazon FBA Reimbursement Tool for Indian Sellers</title>
     <meta name="description" content="Free tool to find missed FBA reimbursements for Amazon.in sellers. Upload reports, get claim templates in minutes. No signup needed.">
-    <meta name="keywords" content="Amazon FBA reimbursement India, Amazon seller tools India, FBA inventory reconciliation, Amazon India seller, PPC optimization Amazon India, dead keywords Amazon">
+    <meta name="keywords" content="Amazon FBA reimbursement India, Amazon seller tools India, FBA inventory reconciliation, Amazon India seller, PPC optimization Amazon India, keyword optimization Amazon">
     <meta property="og:title" content="Vikreya — Find Missed Amazon FBA Reimbursements (Free)">
     <meta property="og:description" content="Upload your Amazon Seller Central reports. Get claim-ready insights in 3 minutes. Built for Indian sellers.">
     <meta property="og:type" content="website">
@@ -37,26 +37,33 @@
 <!-- ========== LANDING PAGE ========== -->
 <div id="landing">
 
+    <!-- Skip to content for keyboard accessibility -->
+    <a href="#what" class="skip-to-content">Skip to main content</a>
+
     <!-- Nav -->
-    <header class="header">
-        <nav class="nav">
+    <header class="header" role="banner">
+        <nav class="nav" aria-label="Main navigation">
             <a href="#" class="logo">विक्रेय<span>Vikreya</span></a>
-            <div class="nav-right">
-                <a href="#what" class="nav-link">What we do</a>
-                <a href="#why" class="nav-link">Why it matters</a>
-                <a href="blog.html" class="nav-link">Resources</a>
-                <button class="btn-nav" onclick="showApp()">Try it free →</button>
+            <button class="mobile-menu-btn" aria-label="Open menu" aria-expanded="false" onclick="toggleMobileMenu(this)">
+                <span></span>
+            </button>
+            <div class="nav-right" id="navMenu" role="menubar">
+                <a href="#what" class="nav-link" role="menuitem">What we do</a>
+                <a href="#why" class="nav-link" role="menuitem">Why it matters</a>
+                <a href="blog.html" class="nav-link" role="menuitem">Resources</a>
+                <button class="btn-nav" onclick="showApp()" role="menuitem">Try it free →</button>
             </div>
         </nav>
     </header>
 
     <!-- Hero — dark bg, left-aligned, asymmetric -->
-    <section class="hero">
+    <main id="main-content">
+    <section class="hero" aria-label="Hero">
         <div class="hero-grid">
             <div class="hero-left">
                 <p class="hero-eyebrow">Free during beta · Built for Amazon.in sellers</p>
                 <h1>Don't leave money<br>on the table.</h1>
-                <p class="hero-body">Between missed reimbursements, ad spend on dead keywords, and listings that don't convert — most Amazon India sellers lose ₹5,000–50,000 a year without realizing it. Vikreya finds the leaks in your existing Seller Central reports.</p>
+                <p class="hero-body">Between unclaimed reimbursements, ad spend on underperforming keywords, and listings that don't convert — most Amazon India sellers miss ₹5,000–50,000 a year without realizing it. Vikreya surfaces the opportunities hidden in your Seller Central reports.</p>
                 <div class="hero-actions">
                     <button class="btn-hero-primary" onclick="showApp()">Start free analysis →</button>
                     <a href="#what" class="btn-hero-ghost">See how it works</a>
@@ -74,14 +81,14 @@
                         <div class="hc-detail">6 units · Lost in fulfillment</div>
                     </div>
                     <div class="hero-card hc2">
-                        <div class="hc-label">Fee overcharge detected</div>
+                        <div class="hc-label">Fee discrepancy found</div>
                         <div class="hc-amount">₹850</div>
-                        <div class="hc-detail">Wrong weight category</div>
+                        <div class="hc-detail">Weight category mismatch</div>
                     </div>
                     <div class="hero-card hc3">
-                        <div class="hc-label">Dead keyword spend</div>
+                        <div class="hc-label">PPC savings found</div>
                         <div class="hc-amount">₹2,100/mo</div>
-                        <div class="hc-detail">7 keywords · Zero conversions</div>
+                        <div class="hc-detail">7 keywords · No conversions</div>
                     </div>
                     <div class="hero-total">
                         <span>Total recoverable</span>
@@ -95,21 +102,21 @@
     <!-- Social proof ticker -->
     <div class="ticker-strip">
         <div class="ticker-inner">
-            <span>⚡ Seller from Surat found ₹22,800 in missed reimbursements</span>
+            <span>⚡ Seller from Surat recovered ₹22,800 in unclaimed reimbursements</span>
             <span>·</span>
-            <span>🎯 7 dead PPC keywords killed, saving ₹18,000/month in Hyderabad</span>
-            <span>·</span>
-            <span>📦 Inventory restock alert prevented stockout on bestseller in Delhi</span>
-            <span>·</span>
-            <span>💰 Fee overcharge of ₹4,500 discovered and filed in Mumbai</span>
-            <span>·</span>
-            <span>⚡ Seller from Surat found ₹22,800 in missed reimbursements</span>
-            <span>·</span>
-            <span>🎯 7 dead PPC keywords killed, saving ₹18,000/month in Hyderabad</span>
+            <span>🎯 7 underperforming PPC keywords paused, saving ₹18,000/month in Hyderabad</span>
             <span>·</span>
             <span>📦 Inventory restock alert prevented stockout on bestseller in Delhi</span>
             <span>·</span>
-            <span>💰 Fee overcharge of ₹4,500 discovered and filed in Mumbai</span>
+            <span>💰 Fee discrepancy of ₹4,500 identified and corrected in Mumbai</span>
+            <span>·</span>
+            <span>⚡ Seller from Surat recovered ₹22,800 in unclaimed reimbursements</span>
+            <span>·</span>
+            <span>🎯 7 underperforming PPC keywords paused, saving ₹18,000/month in Hyderabad</span>
+            <span>·</span>
+            <span>📦 Inventory restock alert prevented stockout on bestseller in Delhi</span>
+            <span>·</span>
+            <span>💰 Fee discrepancy of ₹4,500 identified and corrected in Mumbai</span>
         </div>
     </div>
 
@@ -119,7 +126,7 @@
             <div class="hiw-header">
                 <p class="label">See it in action</p>
                 <h2>From upload to insights<br>in under 3 minutes</h2>
-                <p class="hiw-desc">No learning curve. No account setup. Just upload your Seller Central reports and let Vikreya find what's costing you money.</p>
+                <p class="hiw-desc">No learning curve. No account setup. Just upload your Seller Central reports and let Vikreya highlight what you can optimize.</p>
             </div>
 
             <!-- Video Demo Player -->
@@ -141,7 +148,7 @@
                                     <div class="demo-hero-content">
                                         <div class="demo-eyebrow">Free during beta · Built for Amazon.in sellers</div>
                                         <div class="demo-h1">Don't leave money<br>on the table.</div>
-                                        <div class="demo-hero-body">Between missed reimbursements, dead keywords, and listings that don't convert — most sellers lose ₹5,000–50,000 a year without knowing it.</div>
+                                        <div class="demo-hero-body">Between unclaimed reimbursements, underperforming keywords, and listings that don't convert — most sellers miss ₹5,000–50,000 a year without knowing it.</div>
                                         <div class="demo-btn-group">
                                             <span class="demo-primary-btn">Start free analysis →</span>
                                             <span class="demo-ghost-btn">See how it works</span>
@@ -149,8 +156,8 @@
                                     </div>
                                     <div class="demo-cards-cluster">
                                         <div class="demo-mini-card dmc1"><div class="dmc-label">Reimbursement found</div><div class="dmc-amount">₹4,200</div></div>
-                                        <div class="demo-mini-card dmc2"><div class="dmc-label">Fee overcharge</div><div class="dmc-amount">₹850</div></div>
-                                        <div class="demo-mini-card dmc3"><div class="dmc-label">Dead keyword spend</div><div class="dmc-amount">₹2,100/mo</div></div>
+                                        <div class="demo-mini-card dmc2"><div class="dmc-label">Fee discrepancy</div><div class="dmc-amount">₹850</div></div>
+                                        <div class="demo-mini-card dmc3"><div class="dmc-label">PPC savings</div><div class="dmc-amount">₹2,100/mo</div></div>
                                     </div>
                                 </div>
                                 <!-- Stage 2: Choose service -->
@@ -167,9 +174,9 @@
                                     <div class="demo-wizard-body">
                                         <div class="demo-wiz-title">What do you want to check?</div>
                                         <div class="demo-choices">
-                                            <div class="demo-choice selected"><div class="dchoice-check">✓</div><strong>FBA reimbursement tracker</strong><span>Lost units, fee overcharges, and refunds Amazon owes you for.</span></div>
-                                            <div class="demo-choice"><div class="dchoice-check"></div><strong>FBA fee audit</strong><span>Wrong weight category, incorrect size tier, fee overcharges.</span></div>
-                                            <div class="demo-choice"><div class="dchoice-check"></div><strong>PPC & keyword cleanup</strong><span>Find dead keywords wasting your ad budget.</span></div>
+                                            <div class="demo-choice selected"><div class="dchoice-check">✓</div><strong>FBA reimbursement tracker</strong><span>Find unclaimed reimbursements for lost units and fee discrepancies.</span></div>
+                                            <div class="demo-choice"><div class="dchoice-check"></div><strong>FBA fee audit</strong><span>Verify weight categories, size tiers, and fee accuracy.</span></div>
+                                            <div class="demo-choice"><div class="dchoice-check"></div><strong>PPC & keyword cleanup</strong><span>Identify underperforming keywords and optimize your ad spend.</span></div>
                                         </div>
                                         <div class="demo-wiz-btn">Continue →</div>
                                     </div>
@@ -226,7 +233,7 @@
                                                 <div class="drr-status claimable">File claim</div>
                                             </div>
                                             <div class="demo-result-row">
-                                                <div class="drr-type">Fee overcharge</div>
+                                                <div class="drr-type">Fee discrepancy</div>
                                                 <div class="drr-asin">B08Y7L9P</div>
                                                 <div class="drr-qty">All orders</div>
                                                 <div class="drr-amount">₹850/mo</div>
@@ -297,7 +304,7 @@
                 </div>
                 <div class="testi-card">
                     <div class="testi-stars">★★★★★</div>
-                    <p>"Found ₹8,500 in dead PPC keywords in minutes. Had been wasting that money every single month for almost a year. Now I know exactly which bids to raise and which to kill."</p>
+                    <p>"Found ₹8,500 in underperforming PPC keywords in minutes. Had been spending that money every single month for almost a year with zero return. Now I know exactly which bids to raise and which to pause."</p>
                     <div class="testi-author">
                         <div class="testi-avatar">PS</div>
                         <div>
@@ -330,26 +337,26 @@
                     <h2>Everything you<br>might want to know</h2>
                     <p class="faq-sub">Can't find your answer? <a href="/cdn-cgi/l/email-protection#0169646d6d6e4177686a736478602f607171">Email us</a> — we respond within 24 hours.</p>
                 </div>
-                <div class="faq-right">
-                    <div class="faq-item" onclick="toggleFaq(this)">
-                        <div class="faq-q">Is my data actually safe? <span class="faq-icon">+</span></div>
-                        <div class="faq-a">Yes. All analysis happens inside your browser — your reports are never uploaded to our servers. We don't store, see, or transmit your Seller Central data. When you close the tab, it's gone.</div>
+                <div class="faq-right" role="list">
+                    <div class="faq-item" role="listitem" onclick="toggleFaq(this)" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleFaq(this)}">
+                        <div class="faq-q" role="button" aria-expanded="false">Is my data actually safe? <span class="faq-icon" aria-hidden="true">+</span></div>
+                        <div class="faq-a" role="region">Yes. All analysis happens inside your browser — your reports are never uploaded to our servers. We don't store, see, or transmit your Seller Central data. When you close the tab, it's gone.</div>
                     </div>
-                    <div class="faq-item" onclick="toggleFaq(this)">
-                        <div class="faq-q">Which reports do I need to download from Seller Central? <span class="faq-icon">+</span></div>
-                        <div class="faq-a">It depends on what you're analyzing. For reimbursements: FBA Inventory Ledger + Settlement Report. For PPC: Search Term Report. For inventory: Business Report + FBA Inventory Age. We show you exactly where to find each one when you select your analysis.</div>
+                    <div class="faq-item" role="listitem" onclick="toggleFaq(this)" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleFaq(this)}">
+                        <div class="faq-q" role="button" aria-expanded="false">Which reports do I need to download from Seller Central? <span class="faq-icon" aria-hidden="true">+</span></div>
+                        <div class="faq-a" role="region">It depends on what you're analyzing. For reimbursements: FBA Inventory Ledger + Settlement Report. For PPC: Search Term Report. For inventory: Business Report + FBA Inventory Age. We show you exactly where to find each one when you select your analysis.</div>
                     </div>
-                    <div class="faq-item" onclick="toggleFaq(this)">
-                        <div class="faq-q">How accurate are the reimbursement findings? <span class="faq-icon">+</span></div>
-                        <div class="faq-a">Very accurate for cases that appear clearly in your FBA Inventory Ledger. We flag cases where your ledger shows a loss event (damaged, lost, or returned) without a corresponding reimbursement entry. Amazon's own data is the source of truth — we're just reading it and highlighting what's missing.</div>
+                    <div class="faq-item" role="listitem" onclick="toggleFaq(this)" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleFaq(this)}">
+                        <div class="faq-q" role="button" aria-expanded="false">How accurate are the reimbursement findings? <span class="faq-icon" aria-hidden="true">+</span></div>
+                        <div class="faq-a" role="region">Very accurate for cases that appear clearly in your FBA Inventory Ledger. We flag cases where your ledger shows a loss event (damaged, lost, or returned) without a corresponding reimbursement entry. Your own Seller Central data is the source of truth — we're just reading it and highlighting what may need attention.</div>
                     </div>
-                    <div class="faq-item" onclick="toggleFaq(this)">
-                        <div class="faq-q">Will Amazon penalize me for filing reimbursement claims? <span class="faq-icon">+</span></div>
-                        <div class="faq-a">No. Requesting reimbursement for Amazon's errors is explicitly covered under their FBA Seller Policy. Sellers have an 18-month window to file claims. Amazon expects sellers to audit and file — it's a standard part of selling on FBA. We've never seen a seller penalized for legitimate claim filings.</div>
+                    <div class="faq-item" role="listitem" onclick="toggleFaq(this)" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleFaq(this)}">
+                        <div class="faq-q" role="button" aria-expanded="false">Will Amazon penalize me for filing reimbursement claims? <span class="faq-icon" aria-hidden="true">+</span></div>
+                        <div class="faq-a" role="region">No. Requesting reimbursement for FBA fulfillment discrepancies is explicitly covered under their FBA Seller Policy. Sellers have an 18-month window to file claims. Amazon expects sellers to audit and file — it's a standard part of selling on FBA. Filing legitimate claims is a normal part of the FBA seller experience.</div>
                     </div>
-                    <div class="faq-item" onclick="toggleFaq(this)">
-                        <div class="faq-q">Is this really free? What's the catch? <span class="faq-icon">+</span></div>
-                        <div class="faq-a">Completely free during our beta period. We're building a product for Indian Amazon sellers and need real-world feedback. Your honest feedback after using the tool (via the rating widget after your results) is what makes this possible. We'll introduce paid tiers eventually for advanced features — but the core analysis will always have a free option.</div>
+                    <div class="faq-item" role="listitem" onclick="toggleFaq(this)" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleFaq(this)}">
+                        <div class="faq-q" role="button" aria-expanded="false">Is this really free? What's the catch? <span class="faq-icon" aria-hidden="true">+</span></div>
+                        <div class="faq-a" role="region">Completely free during our beta period. We're building a product for Indian Amazon sellers and need real-world feedback. Your honest feedback after using the tool (via the rating widget after your results) is what makes this possible. We'll introduce paid tiers eventually for advanced features — but the core analysis will always have a free option.</div>
                     </div>
                 </div>
             </div>
@@ -368,14 +375,14 @@
                     <div class="what-number">01</div>
                     <div class="what-content">
                         <h3>Reimbursement detection</h3>
-                        <p>Amazon loses your inventory, charges wrong fees, and processes refunds without getting the return back. It happens more than you think. Upload your FBA Inventory Ledger and we surface every case — with the exact claim template you paste into Seller Support.</p>
+                        <p>In the FBA fulfillment process, units can occasionally be lost, damaged, or have fee discrepancies. These events are recorded in your Inventory Ledger, but reimbursements aren't always automatic. We surface every eligible case — with the exact claim template you paste into Seller Support.</p>
                     </div>
                 </div>
                 <div class="what-item">
                     <div class="what-number">02</div>
                     <div class="what-content">
                         <h3>FBA fee audit</h3>
-                        <p>Amazon charges weight handling fees based on what they measure — not what you declared. If they've remeasured your product wrong, you're being silently overcharged on every single order. We cross-reference your settlement data to find fee discrepancies and tell you exactly how much to dispute.</p>
+                        <p>FBA weight handling fees are based on measured dimensions — which can sometimes differ from what you declared. If there's a measurement discrepancy, fees may be higher than expected on every order. We cross-reference your settlement data to flag potential fee discrepancies and tell you exactly what to verify.</p>
                         <span class="new-badge">New</span>
                     </div>
                 </div>
@@ -383,7 +390,7 @@
                     <div class="what-number">03</div>
                     <div class="what-content">
                         <h3>PPC growth & cleanup</h3>
-                        <p>Your Search Term Report has everything: which keywords make money, which burn it, and which ones your campaigns are fighting over. We break it all down — keywords to scale, keywords to kill, and the exact bid changes to make. No more guessing.</p>
+                        <p>Your Search Term Report has everything: which keywords drive revenue, which ones underperform, and which ones your campaigns are competing against each other on. We break it all down — keywords to scale, keywords to pause, and the exact bid changes to make. No more guessing.</p>
                         <span class="new-badge">New</span>
                     </div>
                 </div>
@@ -391,14 +398,14 @@
                     <div class="what-number">04</div>
                     <div class="what-content">
                         <h3>Business reports analysis</h3>
-                        <p>Your Business Report tells you which products are actually profitable and which ones sit in FBA burning storage fees. We rank them, calculate restock quantities, and flag the ones you should consider cutting.</p>
+                        <p>Your Business Report tells you which products are performing well and which ones are sitting in FBA using up storage fees. We rank them, calculate restock quantities, and flag the ones you should consider adjusting.</p>
                     </div>
                 </div>
                 <div class="what-item">
                     <div class="what-number">05</div>
                     <div class="what-content">
                         <h3>Listing health check</h3>
-                        <p>Short titles, missing bullet points, empty backend keywords — small things that quietly kill your rankings. We score each listing and give you specific rewrites, image shot lists, and SEO keyword suggestions you can paste straight into Seller Central.</p>
+                        <p>Short titles, missing bullet points, empty backend keywords — small things that quietly hold back your rankings. We score each listing and give you specific rewrites, image shot lists, and SEO keyword suggestions you can paste straight into Seller Central.</p>
                     </div>
                 </div>
             </div>
@@ -410,8 +417,8 @@
         <div class="why-inner">
             <div class="why-headline-block">
                 <p class="why-eyebrow">Why this matters</p>
-                <h2 class="why-h2">Amazon's errors are<br><em>silent and expensive.</em></h2>
-                <p class="why-lede">In a beta analysis of 120 Amazon.in FBA sellers, most had no idea money was missing. Units lost in warehouses. Returns never restocked. Fees charged for the wrong product size. Ads running for months on keywords with zero conversions.</p>
+                <h2 class="why-h2">Small oversights add up<br><em>to real money.</em></h2>
+                <p class="why-lede">In a beta analysis of 120 Amazon.in FBA sellers, most had unclaimed reimbursements they didn't know about. Units unaccounted for in warehouses. Returns not restocked. Fee discrepancies. Ad spend on keywords with zero conversions. All fixable — once you can see them.</p>
             </div>
 
             <div class="why-stats-row">
@@ -430,13 +437,13 @@
             </div>
 
             <div class="why-cta-row">
-                <p class="why-closer">Your Seller Central reports have the proof. We just read them for you.</p>
-                <button class="btn-hero-primary" onclick="showApp()">Find my leaks — it's free →</button>
+                <p class="why-closer">Your Seller Central reports have the data. We help you read them.</p>
+                <button class="btn-hero-primary" onclick="showApp()">Start free analysis →</button>
             </div>
         </div>
     </section>
 
-    <!-- Email Capture — for sellers not ready to upload yet -->
+    <!-- Email Capture -->
     <section class="email-capture" id="notify">
         <div class="container">
             <div class="email-capture-inner">
@@ -455,13 +462,15 @@
         </div>
     </section>
 
+    </main>
+
     <!-- Footer -->
-    <footer class="footer">
+    <footer class="footer" role="contentinfo">
         <div class="container">
             <div class="footer-grid">
                 <div class="footer-col">
                     <a href="#" class="logo-footer">विक्रेय<span>Vikreya</span></a>
-                    <p class="footer-tagline">Find the leaks. Claim what's yours.<br>Built for Amazon.in sellers.</p>
+                    <p class="footer-tagline">Spot the gaps. Recover what's yours.<br>Built for Amazon.in sellers.</p>
                 </div>
                 <div class="footer-col">
                     <div class="footer-title">Product</div>
@@ -530,7 +539,7 @@
                     <div class="choice-inner">
                         <div class="choice-left">
                             <strong>FBA reimbursement tracker</strong>
-                            <span>Lost units, fee overcharges, and refunds Amazon owes you money for.</span>
+                            <span>Find unclaimed reimbursements for lost units, fee discrepancies, and unresolved returns.</span>
                         </div>
                         <div class="choice-check">✓</div>
                     </div>
@@ -540,7 +549,7 @@
                     <div class="choice-inner">
                         <div class="choice-left">
                             <strong>FBA fee audit</strong>
-                            <span>Wrong weight category, incorrect size tier, silent fee overcharges on every order.</span>
+                            <span>Verify weight categories, size tiers, and fee accuracy across your settlement data.</span>
                         </div>
                         <div class="choice-tag new-tag">New</div>
                         <div class="choice-check">✓</div>
@@ -551,7 +560,7 @@
                     <div class="choice-inner">
                         <div class="choice-left">
                             <strong>PPC & keyword cleanup</strong>
-                            <span>Find dead keywords wasting your ad budget. Stop paying for clicks that never convert.</span>
+                            <span>Identify underperforming keywords and optimize your ad spend. Scale what works, pause what doesn't.</span>
                         </div>
                         <div class="choice-tag new-tag">New</div>
                         <div class="choice-check">✓</div>
@@ -590,17 +599,17 @@
             <h2>Upload your reports</h2>
             <div id="uploadInstructions"></div>
 
-            <div class="upload-zone" id="uploadZone">
-                <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" multiple>
+            <div class="upload-zone" id="uploadZone" role="button" aria-label="Upload area — drag and drop files or click to browse" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('fileInput').click()}">
+                <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" multiple aria-label="Choose CSV or Excel files to upload">
                 <div class="upload-inner">
                     <div class="upload-icon">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                     </div>
                     <p class="upload-main">Drag and drop your CSV files here</p>
                     <p class="upload-sub">or click to browse · Accepts .csv, .xlsx, .xls</p>
                 </div>
             </div>
-            <div id="fileList" class="file-list"></div>
+            <div id="fileList" class="file-list" aria-live="polite"></div>
 
             <div class="wizard-actions">
                 <button class="btn-ghost-action" onclick="goToStep(1)">← Back</button>
@@ -685,6 +694,32 @@
 <script src="script.js"></script>
 
 <script>
+// --- MOBILE MENU TOGGLE ---
+function toggleMobileMenu(btn) {
+    const nav = document.getElementById('navMenu');
+    const isOpen = nav.classList.toggle('open');
+    btn.classList.toggle('open');
+    btn.setAttribute('aria-expanded', isOpen);
+    btn.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
+    // Prevent body scroll when menu is open
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+}
+// Close mobile menu on nav link click
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.nav-right .nav-link').forEach(function(link) {
+        link.addEventListener('click', function() {
+            var nav = document.getElementById('navMenu');
+            var btn = document.querySelector('.mobile-menu-btn');
+            if (nav && nav.classList.contains('open')) {
+                nav.classList.remove('open');
+                btn.classList.remove('open');
+                btn.setAttribute('aria-expanded', 'false');
+                document.body.style.overflow = '';
+            }
+        });
+    });
+});
+
 // --- FAQ TOGGLE ---
 function toggleFaq(el) {
     const isOpen = el.classList.contains('open');
@@ -693,16 +728,20 @@ function toggleFaq(el) {
         item.classList.remove('open');
         var ans = item.querySelector('.faq-a');
         var icon = item.querySelector('.faq-icon');
+        var q = item.querySelector('.faq-q');
         if (ans) ans.style.display = 'none';
         if (icon) icon.textContent = '+';
+        if (q) q.setAttribute('aria-expanded', 'false');
     });
     // Open clicked one if it was closed
     if (!isOpen) {
         el.classList.add('open');
         var ans = el.querySelector('.faq-a');
         var icon = el.querySelector('.faq-icon');
+        var q = el.querySelector('.faq-q');
         if (ans) ans.style.display = 'block';
         if (icon) icon.textContent = '×';
+        if (q) q.setAttribute('aria-expanded', 'true');
     }
 }
 // Hide all answers on load
@@ -785,4 +824,10 @@ function showFrame(num) {
                 target.classList.add('active');
                 target.style.opacity = '1';
             });
-   
+           });
+    }
+}
+</script>
+
+</body>
+</html>
