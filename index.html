@@ -24,12 +24,12 @@
     <link rel="stylesheet" href="styles.css">
 
     <!-- GOOGLE ANALYTICS — Replace G-XXXXXXXXXX with your real Measurement ID -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CLY65PTM74"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
-        gtag('config', 'G-CLY65PTM74');
+        gtag('config', 'G-XXXXXXXXXX');
     </script>
     <!-- Structured Data: FAQ Schema -->
     <script type="application/ld+json">
@@ -552,7 +552,7 @@
             <div class="email-capture-inner">
                 <h2>Not ready to upload yet?</h2>
                 <p>Get notified when we launch new features — reimbursement automation, inventory alerts, and more. No spam, just product updates for Amazon.in sellers.</p>
-                <form id="emailForm" class="email-form" action="https://formspree.io/f/YOUR_FORM_ID" method="POST" onsubmit="return submitEmail(event);">
+                <form id="emailForm" class="email-form" onsubmit="return openWaitlistForm(event);">
                     <input type="email" id="emailInput" class="email-input" placeholder="your@email.com" required>
                     <button type="submit" class="btn-hero-primary email-submit-btn">Join waitlist →</button>
                 </form>

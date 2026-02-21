@@ -4538,67 +4538,38 @@ function submitFeedback() {
     const data = { rating: feedbackRating, tags: feedbackTags, text: text.trim(), email: email.trim(), service: selectedService, files: uploadedFiles.length };
 
     trackEvent('feedback_submitted', data);
-    const all = JSON.parse(localStorage.getItem('vikreya_feedback') || '[]');
-    all.push({ ...data, timestamp: new Date().toISOString() });
-    localStorage.setItem('vikreya_feedback', JSON.stringify(all));
 
-    // Send feedback to Formspree so you actually receive it (Fix #10)
-    // Replace YOUR_FEEDBACK_FORM_ID with your real Formspree form ID
-    const formspreeUrl = 'https://formspree.io/f/YOUR_FEEDBACK_FORM_ID';
-    if (!formspreeUrl.includes('YOUR_FEEDBACK_FORM_ID')) {
-        fetch(formspreeUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({
-                _subject: 'Vikreya Feedback: ' + feedbackRating + '/5 — ' + selectedService,
-                rating: feedbackRating,
-                tags: feedbackTags.join(', '),
-                comment: text.trim(),
-                email: email.trim(),
-                service: selectedService,
-                filesCount: uploadedFiles.length,
-                timestamp: new Date().toISOString()
-            })
-        }).catch(() => {}); // Silent fail — localStorage backup exists
-    }
+    // Open Google Form for detailed feedback
+    const googleFeedbackUrl = 'https://forms.gle/vvhqWvN5oqADABjaA';
+    window.open(googleFeedbackUrl, '_blank');
 
     const card = document.querySelector('.feedback-card');
     if (card) card.innerHTML = DOMPurify.sanitize(`<div class="feedback-done"><h3>Thank you!</h3><p>Your feedback shapes what we build next.</p></div>`);
-    showToast('Feedback saved!');
+    showToast('Opening feedback form — thanks!');
 }
 
 // ============================================
 // EMAIL COLLECTION
 // ============================================
 
-function submitEmail(event) {
+function openWaitlistForm(event) {
     if (event) event.preventDefault();
     const input = document.getElementById('emailInput');
     if (!input) return false;
     const email = input.value.trim();
     if (!email || !email.includes('@')) { input.style.borderColor = '#dc2626'; return false; }
 
-    // Save to localStorage as backup
-    const emails = JSON.parse(localStorage.getItem('vikreya_emails') || '[]');
-    if (!emails.includes(email)) { emails.push(email); localStorage.setItem('vikreya_emails', JSON.stringify(emails)); }
-
-    // Send to Formspree (replace YOUR_FORM_ID with real one after setup)
-    const formEl = document.getElementById('emailForm');
-    const formAction = formEl ? formEl.getAttribute('action') : '';
-    if (formAction && !formAction.includes('YOUR_FORM_ID')) {
-        fetch(formAction, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({ email: email, source: 'vikreya-waitlist', timestamp: new Date().toISOString() })
-        }).catch(() => {}); // Silent fail — we have localStorage backup
-    }
+    // Open Google Form with email pre-filled
+    const googleFormUrl = 'https://forms.gle/6TNqxfMCAPqx4t9i7';
+    window.open(googleFormUrl, '_blank');
 
     // UI update
+    const formEl = document.getElementById('emailForm');
     if (formEl) formEl.style.display = 'none';
     const success = document.getElementById('emailSuccess');
     if (success) success.style.display = 'block';
-    trackEvent('email_collected', email);
-    showToast("You're on the list!");
+    trackEvent('waitlist_clicked', email);
+    showToast("Opening signup form — thanks!");
     return false;
 }
 
